@@ -1,3 +1,5 @@
+import json
+
 from django.shortcuts import render
 from django.http import HttpResponse, HttpRequest
 from django.core import serializers
@@ -71,29 +73,50 @@ def get_latest_valid_pass(request: HttpRequest, rollno: str):
     ).get()
 
     timings = utlis.get_timings(
-            today.astimezone(pytz.timezone("Asia/Kolkata")), utlis.roll_to_year(rollno)
-        )
-    
+        today.astimezone(pytz.timezone("Asia/Kolkata")), utlis.roll_to_year(rollno)
+    )
+
     if resPass.pass_type == "alumni":
         return resPass
-    
+
     if resPass.valid_till < int(today.timestamp):
         result.success = False
         result.msg = "No valid passes found."
         return result
-    if not (
-        today > timings["open"]
-        and today < timings["close"]
-    ):
+    if not (timings["open"] < today < timings["close"]):
         result.success = False
         result.msg = "Not the time"
-    
 
 
 @api.get("/get_issued_passes")
-def get_issues_passes(request: HttpRequest, ret_type, frm, to, rollno ):
+def get_issues_passes(request: HttpRequest, ret_type = None, frm = None, to= None, rollno = None):
     pass_lst = None
-    if frm!=None and to!=None :
-        pass_qs = IssuedPass.objects.filter(
-            
+    from_stamp = datetime.strptime(frm, "%d-%m-%Y").timestamp()
+    to_stamp = datetime.strptime(to, "%d-%m-%Y").timestamp()
+    pass_qs = IssuedPass.objects.all()
+    if frm and to:
+        print(pass_qs.values())
+        pass_qs = pass_qs.filter(
+            issues_date__range=[from_stamp, to_stamp]
         )
+
+        if rollno:
+            pass_qs = pass_qs.filter(
+                roll_no=rollno
+            )
+
+    if ret_type == "json":
+        res = [i.json() for i in pass_qs]
+        return HttpResponse(json.dumps(res), content_type="application/json")
+    if ret_type == "csv":
+        res = ""
+        for i in pass_qs:
+            if res == "":
+                res += (str(list(i.json().keys())).strip("[]")
+                        .replace("'","") + "\n")
+            res += (str(list(i.json().values())).strip("[]")
+                    .replace("'","")
+                    .replace(i.valid_till, )+ "\n")
+        return HttpResponse(res, content_type="text/csv",headers={
+            "Content-Disposition": f"attachment; filename=passes_{int(datetime.now().timestamp())}.csv"
+        })

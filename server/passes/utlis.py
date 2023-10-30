@@ -1,6 +1,7 @@
 from datetime import datetime
 from passes.models import LunchTiming
 from typing import Dict
+import pytz
 
 
 def roll_to_year(rno):
@@ -9,7 +10,6 @@ def roll_to_year(rno):
     if today.month >= 9:
         year += 1
     return year
-
 
 def get_timings(today: datetime, year: int) -> Dict[str, datetime]:
     timings = LunchTiming.objects.get(year=year)
@@ -30,3 +30,8 @@ def get_timings(today: datetime, year: int) -> Dict[str, datetime]:
     )
 
     return {"open": opening_time, "close": closing_time}
+
+def get_local_date(timestamp: int):
+    date = datetime.fromtimestamp(timestamp).astimezone(pytz.timezone("Asia/Kolkata"))
+    resDate = date.strftime("%d-%m-%Y %H:%M")
+    return resDate

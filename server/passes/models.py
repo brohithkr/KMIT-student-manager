@@ -12,6 +12,14 @@ class IssuedPass(models.Model):
     valid_till = models.IntegerField("Unix time stamp of expiry date.")
     pass_type = models.CharField(choices=PASS_TYPES, max_length=10)
 
+    def json(self):
+        return {
+            "roll_no": self.roll_no,
+            "issue_date": self.issues_date,
+            "valid_till": self.valid_till,
+            "pass_type": self.pass_type
+        }
+
     class Meta:
         db_table = "issued_pass"
 
