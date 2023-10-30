@@ -57,9 +57,9 @@ def edit_timings(request: HttpRequest, timings: List[ReqLunchTiming]):
 def get_latest_valid_pass(request: HttpRequest, rollno: str):
     result = Result(success=True, msg="")
     today = datetime.today()
-    resPass = IssuedPass.objects.filter(
+    resPass = IssuedPass.objects.get(
         roll_no=rollno, valid_till__gt=today.timestamp()
-    ).get()
+    )
 
     timings = utlis.get_timings(
         today.astimezone(pytz.timezone("Asia/Kolkata")), utlis.roll_to_year(rollno)

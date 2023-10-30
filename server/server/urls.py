@@ -28,7 +28,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path("hello/",home),
+    path("",home),
     path("", include("passes.urls")),
     path("latecomers",include("latecomers.urls"))
 ]

@@ -3,3 +3,5 @@ __pycache__
 secret**
 db.sqlite3
 .idea
+.env
+.gitignore
