@@ -1,4 +1,7 @@
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpRequest
+from ninja import NinjaAPI
 
-def home():
-    print("hello world")
+
+def home(request: HttpRequest):
+    print(request.method)
+    return HttpResponse("hello world")
