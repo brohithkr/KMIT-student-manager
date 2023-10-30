@@ -1,5 +1,5 @@
 from django.db import models
-
+from typing import Generic, TypeVar
 
 class IssuedPass(models.Model):
     PASS_TYPES = [
@@ -21,3 +21,9 @@ from ninja import Schema
 class ReqPass(Schema):
     roll_no: str
     pass_type: str
+
+T = TypeVar('T')
+class Result(Schema, Generic[T]):
+    content: T
+    success: bool
+    msg: str
