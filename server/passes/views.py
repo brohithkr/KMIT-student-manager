@@ -53,13 +53,20 @@ def edit_timings(request: HttpRequest, timings: List[ReqLunchTiming]):
     return "success"
 
 
-@api.get("/isvalid", )
-def get_latest_valid_pass(request: HttpRequest, rollno: str):
+@api.get(
+    "/isvalid",
+)
+def is_valid(request: HttpRequest, rollno: str):
     result = Result(success=True, msg="")
     today = datetime.today()
-    resPass = IssuedPass.objects.get(
+    resPass = IssuedPass.objects.filter(
         roll_no=rollno, valid_till__gt=today.timestamp()
-    )
+    ).last()
+
+    if not resPass:
+        result.success = False
+        result.msg = "No passes found."
+        return result
 
     timings = utlis.get_timings(
         today.astimezone(pytz.timezone("Asia/Kolkata")), utlis.roll_to_year(rollno)
@@ -68,31 +75,35 @@ def get_latest_valid_pass(request: HttpRequest, rollno: str):
     if resPass.pass_type == "alumni":
         return resPass
 
-    if resPass.valid_till < int(today.timestamp):
+    if resPass.valid_till < int(today.timestamp()):
         result.success = False
         result.msg = "No valid passes found."
         return result
-    if not (timings["open"] < today < timings["close"]):
+    if not (
+        timings["open"]
+        < today.astimezone(pytz.timezone("Asia/Kolkata"))
+        < timings["close"]
+    ):
         result.success = False
         result.msg = "Not the time"
+        return result
+    return result 
 
 
 @api.get("/get_issued_passes")
-def get_issues_passes(request: HttpRequest, ret_type=None, frm=None, to=None, rollno=None):
+def get_issues_passes(
+    request: HttpRequest, ret_type=None, frm=None, to=None, rollno=None
+):
     pass_lst = None
     pass_qs = IssuedPass.objects.all()
     if frm and to:
         from_stamp = datetime.strptime(frm, "%d-%m-%Y").timestamp()
         to_stamp = datetime.strptime(to, "%d-%m-%Y").timestamp()
         # print(pass_qs.values())
-        pass_qs = pass_qs.filter(
-            issues_date__range=[from_stamp, to_stamp]
-        )
+        pass_qs = pass_qs.filter(issues_date__range=[from_stamp, to_stamp])
 
     if rollno:
-        pass_qs = pass_qs.filter(
-            roll_no=rollno
-        )
+        pass_qs = pass_qs.filter(roll_no=rollno)
 
     if pass_qs.count() == 0:
         return HttpResponse("No passes found.")
@@ -104,12 +115,19 @@ def get_issues_passes(request: HttpRequest, ret_type=None, frm=None, to=None, ro
         res = ""
         for i in pass_qs:
             if res == "":
-                res += (str(list(i.json().keys())).strip("[]")
-                        .replace("'", "") + "\n")
-            res += (str(list(i.json().values())).strip("[]")
-                    .replace("'", "")
-                    .replace(str(i.valid_till), utlis.get_local_date(i.valid_till))
-                    .replace(str(i.issues_date), utlis.get_local_date(i.issues_date)) + "\n")
-        return HttpResponse(res, content_type="text/csv", headers={
-            "Content-Disposition": f"attachment; filename=passes_{int(datetime.now().timestamp())}.csv"
-        })
+                res += str(list(i.json().keys())).strip("[]").replace("'", "") + "\n"
+            res += (
+                str(list(i.json().values()))
+                .strip("[]")
+                .replace("'", "")
+                .replace(str(i.valid_till), utlis.get_local_date(i.valid_till))
+                .replace(str(i.issues_date), utlis.get_local_date(i.issues_date))
+                + "\n"
+            )
+        return HttpResponse(
+            res,
+            content_type="text/csv",
+            headers={
+                "Content-Disposition": f"attachment; filename=passes_{int(datetime.now().timestamp())}.csv"
+            },
+        )

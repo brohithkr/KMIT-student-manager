@@ -15,7 +15,6 @@ def get_timings(today: datetime, year: int) -> Dict[str, datetime]:
     timings = LunchTiming.objects.get(year=year)
     opening_arr = timings.opening_time.split(":")
     closing_arr = timings.closing_time.split(":")
-    print(opening_arr)
     opening_time = today.replace(
         hour=int(opening_arr[0]),
         minute=int(opening_arr[1]),
