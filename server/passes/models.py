@@ -13,17 +13,29 @@ class IssuedPass(models.Model):
     pass_type = models.CharField(choices=PASS_TYPES, max_length=10)
 
     class Meta:
-        db_table = "Issued_Pass"
+        db_table = "issued_pass"
 
+class LunchTiming(models.Model):
+    year = models.IntegerField()
+    opening_time = models.CharField(max_length=10)
+    closing_time = models.CharField(max_length=10)
+    
+    class Meta:
+        db_table = "lunch_timings"
 
 from ninja import Schema
+
 
 class ReqPass(Schema):
     roll_no: str
     pass_type: str
 
+class ReqLunchTiming(Schema):
+    opening_time: str
+    closing_time: str
+
 T = TypeVar('T')
-class Result(Schema, Generic[T]):
-    content: T
+class Result(Schema):
+    # content: T | None = None
     success: bool
     msg: str
