@@ -45,4 +45,7 @@ def gen_pass(request: HttpRequest, reqPass: ReqPass ):
     )
     return "success"
 
+@api.get("/latest_pass")
+def get_latest_valid_pass():
+    pass
 
