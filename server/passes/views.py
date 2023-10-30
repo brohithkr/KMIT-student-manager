@@ -1,26 +1,15 @@
 import json
 
-from django.shortcuts import render
 from django.http import HttpResponse, HttpRequest
-from django.core import serializers
 from ninja import NinjaAPI
-from ninja.security import HttpBearer
 from passes.models import *
 from datetime import datetime, timedelta
-import time
 from dateutil import relativedelta
 import pytz
 from typing import List
-import passes.secret_config as secrets
+
 from passes import utlis
-
-
-class Auth(HttpBearer):
-    def authenticate(self, request, token):
-        if token == secrets.auth_token:
-            return True
-        return False
-
+from server.utlis import Auth
 
 api = NinjaAPI()
 
@@ -89,13 +78,13 @@ def get_latest_valid_pass(request: HttpRequest, rollno: str):
 
 
 @api.get("/get_issued_passes")
-def get_issues_passes(request: HttpRequest, ret_type = None, frm = None, to= None, rollno = None):
+def get_issues_passes(request: HttpRequest, ret_type=None, frm=None, to=None, rollno=None):
     pass_lst = None
     from_stamp = datetime.strptime(frm, "%d-%m-%Y").timestamp()
     to_stamp = datetime.strptime(to, "%d-%m-%Y").timestamp()
     pass_qs = IssuedPass.objects.all()
     if frm and to:
-        print(pass_qs.values())
+        # print(pass_qs.values())
         pass_qs = pass_qs.filter(
             issues_date__range=[from_stamp, to_stamp]
         )
@@ -113,10 +102,11 @@ def get_issues_passes(request: HttpRequest, ret_type = None, frm = None, to= Non
         for i in pass_qs:
             if res == "":
                 res += (str(list(i.json().keys())).strip("[]")
-                        .replace("'","") + "\n")
+                        .replace("'", "") + "\n")
             res += (str(list(i.json().values())).strip("[]")
-                    .replace("'","")
-                    .replace(i.valid_till, )+ "\n")
-        return HttpResponse(res, content_type="text/csv",headers={
+                    .replace("'", "")
+                    .replace(str(i.valid_till), utlis.get_local_date(i.valid_till))
+                    .replace(str(i.issues_date), utlis.get_local_date(i.issues_date)) + "\n")
+        return HttpResponse(res, content_type="text/csv", headers={
             "Content-Disposition": f"attachment; filename=passes_{int(datetime.now().timestamp())}.csv"
         })
