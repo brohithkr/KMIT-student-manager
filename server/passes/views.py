@@ -80,19 +80,22 @@ def get_latest_valid_pass(request: HttpRequest, rollno: str):
 @api.get("/get_issued_passes")
 def get_issues_passes(request: HttpRequest, ret_type=None, frm=None, to=None, rollno=None):
     pass_lst = None
-    from_stamp = datetime.strptime(frm, "%d-%m-%Y").timestamp()
-    to_stamp = datetime.strptime(to, "%d-%m-%Y").timestamp()
     pass_qs = IssuedPass.objects.all()
     if frm and to:
+        from_stamp = datetime.strptime(frm, "%d-%m-%Y").timestamp()
+        to_stamp = datetime.strptime(to, "%d-%m-%Y").timestamp()
         # print(pass_qs.values())
         pass_qs = pass_qs.filter(
             issues_date__range=[from_stamp, to_stamp]
         )
 
-        if rollno:
-            pass_qs = pass_qs.filter(
-                roll_no=rollno
-            )
+    if rollno:
+        pass_qs = pass_qs.filter(
+            roll_no=rollno
+        )
+
+    if pass_qs.count() == 0:
+        return HttpResponse("No passes found.")
 
     if ret_type == "json":
         res = [i.json() for i in pass_qs]
