@@ -46,6 +46,18 @@ def gen_pass(request: HttpRequest, reqPass: ReqPass ):
     return "success"
 
 @api.get("/latest_pass")
-def get_latest_valid_pass():
-    pass
+def get_latest_valid_pass(request: HttpRequest, roll_no: str):
+    today = datetime.today()
+    res = IssuedPass.objects.filter(
+        roll_no = roll_no,
+        valid_till__gt = today.timestamp()
+    )
+    print(res)
+    return res
+
+# @api.get("/get_issued_passes")
+# def get_issues_passes(request: HttpRequest, ret_type, frm, to, rollno ):
+#     pass_lst = []
+
+
 
