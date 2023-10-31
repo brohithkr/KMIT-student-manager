@@ -1,5 +1,6 @@
 from django.db import models
 from typing import Generic, TypeVar
+from bulk_update_or_create import BulkUpdateOrCreateQuerySet
 
 class IssuedPass(models.Model):
     PASS_TYPES = [
@@ -24,6 +25,7 @@ class IssuedPass(models.Model):
         db_table = "issued_pass"
 
 class LunchTiming(models.Model):
+    objects = BulkUpdateOrCreateQuerySet.as_manager()
     year = models.IntegerField()
     opening_time = models.CharField(max_length=10)
     closing_time = models.CharField(max_length=10)

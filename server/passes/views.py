@@ -44,18 +44,15 @@ def gen_pass(request: HttpRequest, reqPass: ReqPass):
 
 @api.post("/edit_timings", auth=Auth())
 def edit_timings(request: HttpRequest, timings: List[ReqLunchTiming]):
-    year = 1
+    body: List[dict] = json.loads(request.body)
+
+    timings_lst = [ LunchTiming(year=i+1, **body[i]) for i in range(0,len(body))]
     for i in timings:
-        LunchTiming.objects.update_or_create(
-            year=year, opening_time=i.opening_time, closing_time=i.closing_time
-        )
-        year += 1
+        LunchTiming.objects.bulk_update_or_create(timings_lst, ['opening_time','closing_time'], match_field='year')
     return "success"
 
 
-@api.get(
-    "/isvalid",
-)
+@api.get("/isvalid")
 def is_valid(request: HttpRequest, rollno: str):
     result = Result(success=True, msg="")
     today = datetime.today()
@@ -69,7 +66,8 @@ def is_valid(request: HttpRequest, rollno: str):
         return result
 
     timings = utlis.get_timings(
-        today.astimezone(pytz.timezone("Asia/Kolkata")), utlis.roll_to_year(rollno)
+        today.astimezone(pytz.timezone("Asia/Kolkata")),
+        utlis.roll_to_year(rollno),
     )
 
     if resPass.pass_type == "alumni":
@@ -87,12 +85,16 @@ def is_valid(request: HttpRequest, rollno: str):
         result.success = False
         result.msg = "Not the time"
         return result
-    return result 
+    return result
 
 
-@api.get("/get_issued_passes")
+@api.get("/get_issued_passes", description="Lets you download all passes")
 def get_issues_passes(
-    request: HttpRequest, ret_type=None, frm=None, to=None, rollno=None
+    request: HttpRequest,
+    ret_type=None,
+    frm=None,
+    to=None,
+    rollno=None,
 ):
     pass_lst = None
     pass_qs = IssuedPass.objects.all()
@@ -100,7 +102,9 @@ def get_issues_passes(
         from_stamp = datetime.strptime(frm, "%d-%m-%Y").timestamp()
         to_stamp = datetime.strptime(to, "%d-%m-%Y").timestamp()
         # print(pass_qs.values())
-        pass_qs = pass_qs.filter(issues_date__range=[from_stamp, to_stamp])
+        pass_qs = pass_qs.filter(
+            issues_date__range=[from_stamp, to_stamp],
+        )
 
     if rollno:
         pass_qs = pass_qs.filter(roll_no=rollno)
