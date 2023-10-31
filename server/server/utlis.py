@@ -1,7 +1,11 @@
 from ninja.security import HttpBearer
-import server.secret_config as secrets
+import environ
+
+env = environ.Env()
+environ.Env.read_env()
+
 class Auth(HttpBearer):
     def authenticate(self, request, token):
-        if token == secrets.auth_token:
+        if token == env("AUTH_TOKEN"):
             return True
         return False
