@@ -111,7 +111,7 @@ def get_issues_passes(
     if rollno:
         pass_qs = pass_qs.filter(roll_no=rollno)
 
-    if pass_qs.count() == 0:
+    if len(pass_qs) == 0:
         return HttpResponse("No passes found.")
 
     if ret_type == "json":
