@@ -102,7 +102,7 @@ def get_issues_passes(
     pass_qs = IssuedPass.objects.all()
     if frm and to:
         from_stamp = datetime.strptime(frm, "%d-%m-%Y").timestamp()
-        to_stamp = datetime.strptime(to, "%d-%m-%Y").timestamp()
+        to_stamp = datetime.strptime(to, "%d-%m-%Y").timestamp() + (24*60*60)
         # print(pass_qs.values())
         pass_qs = pass_qs.filter(
             issues_date__range=[from_stamp, to_stamp],
