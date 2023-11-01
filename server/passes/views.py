@@ -46,9 +46,11 @@ def gen_pass(request: HttpRequest, reqPass: ReqPass):
 def edit_timings(request: HttpRequest, timings: List[ReqLunchTiming]):
     body: List[dict] = json.loads(request.body)
 
-    timings_lst = [ LunchTiming(year=i+1, **body[i]) for i in range(0,len(body))]
+    timings_lst = [LunchTiming(year=i + 1, **body[i]) for i in range(0, len(body))]
     for i in timings:
-        LunchTiming.objects.bulk_update_or_create(timings_lst, ['opening_time','closing_time'], match_field='year')
+        LunchTiming.objects.bulk_update_or_create(
+            timings_lst, ["opening_time", "closing_time"], match_field="year"
+        )
     return "success"
 
 
@@ -135,3 +137,13 @@ def get_issues_passes(
                 "Content-Disposition": f"attachment; filename=passes_{int(datetime.now().timestamp())}.csv"
             },
         )
+
+
+@api.get("/get_valid_passes")
+def get_valid_passes(request: HttpRequest):
+    today = datetime.today()
+    pass_qs = IssuedPass.objects.filter(valid_till__gt=today.timestamp())
+    pass_json = [i.json() for i in pass_qs]
+    print(pass_json)
+
+    return HttpResponse(json.dumps(pass_json), content_type="application/json")
