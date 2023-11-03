@@ -4,3 +4,4 @@ secret**
 db.sqlite3
 .idea
 .env
+server/test.py

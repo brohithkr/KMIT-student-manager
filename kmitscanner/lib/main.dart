@@ -1,6 +1,8 @@
 // ignore_for_file: prefer_const_constructors
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
 
 void main() {
   runApp(const MyApp());
@@ -34,7 +36,24 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  void scanQR() {}
+  String _scanData = "--";
+  void scanQR() async {
+    String scanRes;
+    try {
+      scanRes = await FlutterBarcodeScanner.scanBarcode(
+        '#ff6666',
+        'Cancel',
+        false,
+        ScanMode.BARCODE,
+      );
+    } on PlatformException {
+      scanRes = 'Failed to get platform version.';
+    }
+
+    setState(() {
+      _scanData = scanRes;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
