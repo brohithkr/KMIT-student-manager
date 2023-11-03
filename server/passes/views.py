@@ -36,8 +36,8 @@ def gen_pass(request: HttpRequest, reqPass: ReqPass):
     IssuedPass.objects.create(
         roll_no=reqPass.roll_no,
         pass_type=reqPass.pass_type,
-        issues_date=today.timestamp(),
-        valid_till=valid_till.timestamp(),
+        issues_date=int(today.timestamp()),
+        valid_till=int(valid_till.timestamp()),
     )
     return "success"
 

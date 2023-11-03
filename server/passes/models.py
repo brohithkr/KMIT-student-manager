@@ -9,9 +9,9 @@ class IssuedPass(models.Model):
         ("alumni", "alumni")
     ]
     roll_no = models.CharField(max_length=11)
-    issues_date = models.IntegerField("Unix time stamp of issued date.")
-    valid_till = models.IntegerField("Unix time stamp of expiry date.")
-    pass_type = models.CharField(choices=PASS_TYPES, max_length=10)
+    issues_date = models.BigIntegerField("Unix time stamp of issued date.")
+    valid_till = models.BigIntegerField("Unix time stamp of expiry date.")
+    pass_type = models.CharField(max_length=10)
 
     def json(self):
         return {
