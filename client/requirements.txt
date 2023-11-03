@@ -1,0 +1,5 @@
+pyqt5
+requests
+
+# # for frozen executable
+pyinstaller
