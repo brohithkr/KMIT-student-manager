@@ -4,7 +4,7 @@ from django.http import HttpResponse, HttpRequest
 from ninja import NinjaAPI
 from passes.models import *
 from datetime import datetime, timedelta
-from dateutil import relativedelta
+from dateutil.relativedelta import relativedelta
 import pytz
 from typing import List
 
@@ -36,8 +36,8 @@ def gen_pass(request: HttpRequest, reqPass: ReqPass):
     IssuedPass.objects.create(
         roll_no=reqPass.roll_no,
         pass_type=reqPass.pass_type,
-        issues_date=today.timestamp(),
-        valid_till=valid_till.timestamp(),
+        issues_date=int(today.timestamp()),
+        valid_till=int(valid_till.timestamp()),
     )
     return "success"
 
@@ -102,7 +102,7 @@ def get_issues_passes(
     pass_qs = IssuedPass.objects.all()
     if frm and to:
         from_stamp = datetime.strptime(frm, "%d-%m-%Y").timestamp()
-        to_stamp = datetime.strptime(to, "%d-%m-%Y").timestamp()
+        to_stamp = datetime.strptime(to, "%d-%m-%Y").timestamp() + (24 * 60 * 60)
         # print(pass_qs.values())
         pass_qs = pass_qs.filter(
             issues_date__range=[from_stamp, to_stamp],
@@ -111,7 +111,7 @@ def get_issues_passes(
     if rollno:
         pass_qs = pass_qs.filter(roll_no=rollno)
 
-    if pass_qs.count() == 0:
+    if len(pass_qs) == 0:
         return HttpResponse("No passes found.")
 
     if ret_type == "json":
