@@ -43,6 +43,7 @@ class Student(models.Model):
     year = models.CharField(max_length=2, default="-1")
     dept = models.CharField(max_length=5)
     section = models.CharField(max_length=5)
+    picture = models.CharField(max_length=60)
 
     class Meta:
         db_table = "student"
@@ -87,7 +88,7 @@ def init_students():
                 json.loads(file.read()).values(),
             )
         )
-    print(len(data))
+    print(())
     Student.objects.bulk_create(
         data
     )
