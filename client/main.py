@@ -1,27 +1,26 @@
 from os.path import dirname, abspath, isfile, join as joinpath
 from sys import argv, exit, executable
 from re import fullmatch
-from requests import post as urlpost
+from requests import get as urlget, post as urlpost
 from datetime import date
+# from json import load as loadjson
 from base64 import b64decode as b64d, b64encode as b64e
-from configparser import ConfigParser
 
 from PyQt5.QtWidgets import (
     QApplication, QMainWindow, QMenu, QAction, QLineEdit, QComboBox, 
     QToolButton, QPushButton, QGraphicsScene, QGraphicsPixmapItem,
     QGraphicsView, QMessageBox
 )
-from PyQt5.QtGui import QIcon, QPixmap, QImage, QPainter
-from PyQt5.QtPrintSupport import QPrinter, QPrintDialog, QPrinterInfo
+from PyQt5.QtGui import QIcon, QPixmap, QImage, QColorConstants
 from PyQt5.uic import loadUi
-from PyQt5.QtCore import pyqtSlot, QSizeF
+from PyQt5.QtCore import pyqtSlot, QObject, QThread
 
 import sys
 
 from setlunchtime import *
 from gethistory import *
 from getlatecomers import *
-from srvrcfg import SERVERURL, headers, details
+from srvrcfg import SERVERURL, headers
 
 BASE_DIR = None
 if getattr(sys, 'frozen', False):
@@ -29,20 +28,13 @@ if getattr(sys, 'frozen', False):
 elif __file__:
     BASE_DIR = dirname(abspath(__file__))
 
-DATE = date.today()
-YEAR = int(str(DATE.year)[2:])
 DATA_DIR = joinpath(dirname(abspath(__file__)), "res")
 
-savedPageSize = False
-cfg = ConfigParser()
-if isfile(joinpath(BASE_DIR, '.config.ini')):
-    cfg.read(joinpath(BASE_DIR, '.config.ini'))
-    sections = cfg.sections()
-    if "PageSize" in sections:
-        savedPageSize = True
-else:
-    cfg["PageSize"] = {"height": "-1", "width": "-1"}
+with open(joinpath(DATA_DIR, "Anonymous.png"), "rb") as img:
+    anonymous_img = b64e(img.read()), "Anonymous"
 
+DATE = date.today()
+YEAR = int(str(DATE.year)[2:])
 
 class MainWin(QMainWindow):
     def __init__(self, parent=None):
@@ -54,7 +46,6 @@ class MainWin(QMainWindow):
         self.PassType: QComboBox
         self.Tools: QToolButton
         self.GenPassBtn: QPushButton
-        self.PrintBtn: QPushButton
         self.Image: QGraphicsView
 
         ui_file_path = joinpath(DATA_DIR, 'design.ui')
@@ -71,33 +62,22 @@ class MainWin(QMainWindow):
         self.rno.textChanged.connect(self.handleRollNo)
         self.rno.returnPressed.connect(lambda: self.PassType.setFocus())
 
-        self.invalid.setStyleSheet("color: red;")
-
         self.PassType.currentIndexChanged.connect(lambda idx: self.GenPassBtn.setEnabled(idx > -1))
         self.GenPassBtn.pressed.connect(self.generatePass)
-        self.PrintBtn.pressed.connect(self.printQR)
-
-        icon = QIcon()
-        icon.addPixmap(QPixmap(joinpath(DATA_DIR, "Print.png")), QIcon.Normal, QIcon.On)
-        self.PrintBtn.setIcon(icon)
-        self.PrintBtn.setText(None)
-
-        self.PrintBtn.hide()
 
         self.setupOptions()
         self.handleRollNo("")
 
     @pyqtSlot(str)
     def handleRollNo(self, _):
-        self.PrintBtn.hide()
-        rno = self.rno.text().upper()
+        self.rno.setText(self.rno.text().upper())
+        rno = self.rno.text()
 
         if not fullmatch("\d{2}BD1A\d{2}[A-HJ-NP-RT-Z0-9]{2}", rno):
             self.PassType.setCurrentIndex(-1)
             self.PassType.setDisabled(True)
             self.GenPassBtn.setDisabled(True)
-            with open(joinpath(DATA_DIR, "Anonymous.png"), "rb") as img:
-                self._SetImg(b64e(img.read()), "Anonymous")
+            self._SetImg(*anonymous_img)
             self.details.setText("## Enter data")
             self.details.setStyleSheet("color: #ccc")
             self.details.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -105,7 +85,17 @@ class MainWin(QMainWindow):
             self.status.setText("Invalid Roll No." if len(rno)==10 else "Waiting for data")
             return
         
-        self.updateDetails()
+        self.StateHandler = QThread()
+        self.detailsUpdater = DetailsFetcher(rno)
+        self.detailsUpdater.moveToThread(self.StateHandler)
+        self.StateHandler.started.connect(self.detailsUpdater.updateDetails)
+
+        self.detailsUpdater.error.connect(self.error)
+        self.detailsUpdater.success.connect(self.updateUI)
+
+        self.StateHandler.finished.connect(self.detailsUpdater.deleteLater) 
+        self.StateHandler.finished.connect(self.StateHandler.deleteLater) 
+        self.StateHandler.start()
         # self._SetImg("Processing")
 
         admn_yr = int(rno[:2])
@@ -114,39 +104,17 @@ class MainWin(QMainWindow):
         self.PassType.model().item(2).setEnabled(admn_yr < YEAR-3 or 
                                                  (admn_yr == YEAR-3 and DATE.month > 6))
 
-    def updateDetails(self):
-        # urlget("http://localhost:3000/details").json()
-        self.details.setText(f"##### Name:\n### {details['name']}\n---\n#### Section: {details['section']}\n#### Year: {details['year']}\n")
+    @pyqtSlot(dict)
+    def updateUI(self, student_details):
+        self.details.setText(f"##### Name:\n### {student_details['name']}\n---\n#### Section: {student_details['dept']}-{student_details['section']}\n#### Year: {student_details['year']}\n")
         self.details.setStyleSheet("color: #000")
         self.details.setAlignment(Qt.AlignmentFlag.AlignLeft|Qt.AlignmentFlag.AlignVCenter)
-        self._SetImg(details["image"].encode(), 'Student')
-        # ...
 
-    def printQR(self):
-        self.status.setText("Printing Pass")
-        Printer = QPrinter(QPrinterInfo.defaultPrinter())
-        saved_size = None
-        if savedPageSize:
-            saved_size = (float(cfg["PageSize"]["width"]), float(cfg["PageSize"]["height"]))
-            Printer.setPageSizeMM(QSizeF(*saved_size))
-        Printer.setPageMargins(5,5,5,5, QPrinter.Millimeter)
-        
-        painter = QPainter()
-        printdlg = QPrintDialog(Printer)
-        printdlg.exec()
-
-        painter.begin(Printer)
-        res = min(Printer.width(), Printer.height())
-        painter.drawImage(0,0,self.Img.scaled(res, res))
-        painter.end()
-
-        self.status.setText("Printing Pass")
-
-        pagesize = Printer.pageSizeMM()
-        if saved_size != (wd:=pagesize.width(), ht:=pagesize.height()):
-            cfg["PageSize"]["width"], cfg["PageSize"]["height"] = str(wd), str(ht)
-            with open(joinpath(BASE_DIR , '.config.ini'), "w") as f:
-                cfg.write(f)
+        if student_details["picture"] == None:
+            self._SetImg(*anonymous_img)
+            self._SetImg("Image not found", "Error", False)
+        else:
+            self._SetImg(student_details["picture"], "Student")
 
     def setupOptions(self):
         settingsMenu = QMenu(self)
@@ -180,31 +148,32 @@ class MainWin(QMainWindow):
         dlg.show()
         self.status.setText("Waiting...")
 
-    def _SetImg(self, img: bytes | str | None = None, imgtype: str | None = None) -> None:
-        self.Scene = QGraphicsScene()
-        self.ImgBox = QGraphicsPixmapItem()
-        if imgtype == None:
-            self.Scene.addText("Enter Data" if img == None else img)
-            self.PrintBtn.setDisabled(True)
+    def _SetImg(self, img: bytes | str | None = None, imgtype: str | None = None, reset:bool = True) -> None:
+        if reset:
+            self.Scene = QGraphicsScene()
+            self.ImgBox = QGraphicsPixmapItem()
+        if imgtype == None or imgtype == "Error":
+            text = self.Scene.addText("Enter Data" if img == None else img)
+            text.setDefaultTextColor(QColorConstants.Red)
+            if imgtype == "Error" and not reset:
+                text.setY(self.ImgBox.boundingRect().center().y() + 55 - text.boundingRect().height()/2)
+                text.setX(self.ImgBox.boundingRect().center().x() - text.boundingRect().width()/2)
         else: 
             self.Img = QImage.fromData(b64d(img), 'PNG' if imgtype=="QR" or imgtype=="Anonymous" else 'JPG')
-            self.PixMap = QPixmap.fromImage(self.Img).scaledToWidth(300)
+            if imgtype == "Student": self.PixMap = QPixmap.fromImage(self.Img).scaled(300, 370)
+            else: self.PixMap = QPixmap.fromImage(self.Img).scaledToWidth(300)
             self.ImgBox.setPixmap(self.PixMap)
             self.Scene.addItem(self.ImgBox)
-            self.PrintBtn.setEnabled(True)
-            if imgtype=="QR": self.PrintBtn.show()
-            else: self.PrintBtn.hide()
         self.Image.setScene(self.Scene)
         self.Image.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
     @pyqtSlot()
     def generatePass(self):
         self.status.setText("Processing...")
-        res = None
         passtype = self.PassType.currentIndex()
         try:
             response = urlpost(f"{SERVERURL}/gen_pass", headers=headers, 
-                            json={"roll_no": self.rno.text().upper(), 
+                                json={"roll_no": self.rno.text().upper(), 
                                 "pass_type": "one_time" if passtype == 0 else
                                                 "daily" if passtype == 1 else "alumni" })
         except (ConnectionError, Timeout):
@@ -214,28 +183,18 @@ class MainWin(QMainWindow):
         
         self.status.setText("Generating Pass")
 
-        res = response.content.decode()
+        result = response.content.decode()
 
-        if res.startswith("Error:"):
-            self.error(res.split(":", 1)[1])
+        if result.startswith("Error:"):
+            self.error(result.split(":", 1)[1])
             self.status.setText("Waiting...")
-        elif res.startswith("Traceback"):
-            self.error(f"Server error. Returned:\n{res}")
+        elif result.startswith("Traceback"):
+            self.error(f"Server error. Returned:\n{result}")
             self.status.setText("Waiting...")
-        else:
-            passimg = None
-            data = res.split("\n")
-            if res.startswith("Warning:"):
-                self.error(data[0])
-                if self.PassType.currentIndex() == 2: passimg = data[1]
-            else:
-                passimg = res
-
-            if self.PassType.currentIndex() == 2: 
-                self._SetImg(passimg.encode(), "QR")
-                self.PrintBtn.show()
-            elif response.status_code == 200 and not res.startswith("Warning:"): 
-                self.success("Pass Successfully created")
+        elif result.startswith("Warning:"):
+            self.error(result.split(":", 1)[1])
+        elif response.status_code == 200: 
+            self.success("Pass Successfully created")
             self.status.setText("Done")
 
     @pyqtSlot(str)
@@ -252,6 +211,27 @@ class MainWin(QMainWindow):
         exit()
 
 
+class DetailsFetcher(QObject):
+    error = pyqtSignal(str)
+    success = pyqtSignal(dict)
+    def __init__(self, rno: str):
+        self.rno = rno 
+        super().__init__(None)
+
+    def updateDetails(self):
+        print("Started")
+        try: 
+            self.res = urlget(f"{SERVERURL}/get_student_data?rollno={self.rno}", headers=headers)
+        except (ConnectionError, Timeout):
+            self.error.emit("Unable to connect to server. Check connection & Try again.")
+        else:
+            if self.res.status_code == 200:
+                self.success.emit(self.res.json())
+                return
+            else:
+                self.error.emit("Roll number not found." if self.res.status_code == 404 else "Unable to fetch Student details")
+                return
+        
 if __name__ == '__main__':
     from platform import system
     ostype = system()
