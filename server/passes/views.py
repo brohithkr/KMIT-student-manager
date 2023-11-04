@@ -1,4 +1,5 @@
 import json
+import base64
 
 from django.http import HttpResponse, HttpRequest
 from ninja import NinjaAPI
@@ -7,6 +8,7 @@ from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 import pytz
 from typing import List
+import requests
 
 from passes import utlis
 from server.utlis import Auth
@@ -93,7 +95,7 @@ def is_valid(request: HttpRequest, rollno: str):
 @api.get("/get_issued_passes", description="Lets you download all passes")
 def get_issues_passes(
     request: HttpRequest,
-    ret_type=None,
+    ret_type="json",
     frm=None,
     to=None,
     rollno=None,
@@ -147,3 +149,17 @@ def get_valid_passes(request: HttpRequest):
     print(pass_json)
 
     return HttpResponse(json.dumps(pass_json), content_type="application/json")
+
+
+@api.get("/get_student_data", auth=Auth(), response=ResStudent)
+def get_student_data(request: HttpRequest, rollno: str):
+    res = Student.objects.filter(rollno=rollno).first()
+    if res==None:
+        return HttpResponse("rollno not valid")
+    picture_bytes = requests.get(res.picture).content
+
+    picture_b64 = base64.b64encode(picture_bytes)
+
+    res.picture = picture_b64.decode()
+
+    return res

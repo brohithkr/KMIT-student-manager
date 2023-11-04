@@ -5,3 +5,8 @@ db.sqlite3
 .idea
 .env
 students.json
+server/test.py
+server/.vscode/settings.json
+backData**
+server/testUpload.py
+server/students.json

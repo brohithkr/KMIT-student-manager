@@ -30,5 +30,5 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path("",home),
     path("", include("passes.urls")),
-    path("latecomers",include("latecomers.urls"))
+    path("latecomers/",include("latecomers.urls")),
 ]

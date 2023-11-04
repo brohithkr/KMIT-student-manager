@@ -32,7 +32,7 @@ def rem_latecomers(request: HttpRequest):
 
 
 @api.get("")
-def latecomers(request, ret_type, frm=None, to=None, rollno=None):
+def latecomers(request, ret_type = "json", frm=None, to=None, rollno=None):
     latecomers_qs = Latecomers.objects.all()
 
     if frm and to:
