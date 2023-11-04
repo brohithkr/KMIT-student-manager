@@ -61,6 +61,17 @@ class ReqLunchTiming(Schema):
     opening_time: str
     closing_time: str
 
+class ResStudent(Schema):
+    rollno : str
+    kmitrollno : str
+    name : str
+    year : str
+    dept: str
+    section: str
+    picture : str
+
+
+
 
 # T = TypeVar('T')
 class Result(Schema):

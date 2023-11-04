@@ -4,5 +4,6 @@ from passes.models import Student, init_students
 
 def home(request: HttpRequest, initdb=False):
     print(request.method)
-    init_students()
+    if (initdb):
+        init_students()
     return HttpResponse("hello world")
