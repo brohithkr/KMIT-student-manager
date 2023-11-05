@@ -23,10 +23,8 @@ from getlatecomers import *
 from srvrcfg import SERVERURL, headers
 
 BASE_DIR = None
-if getattr(sys, 'frozen', False):
-    BASE_DIR = dirname(executable)
-elif __file__:
-    BASE_DIR = dirname(abspath(__file__))
+if getattr(sys, 'frozen', False): BASE_DIR = dirname(executable)
+elif __file__: BASE_DIR = dirname(abspath(__file__))
 
 DATA_DIR = joinpath(dirname(abspath(__file__)), "res")
 
@@ -53,26 +51,22 @@ class MainWin(QMainWindow):
 
         self.status = QLabel()
         self.status.setAlignment(Qt.AlignmentFlag.AlignRight)
-        self.status.setStyleSheet("padding-right: 12px; padding-bottom: 3px")
+        self.status.setStyleSheet("padding-right: 5px; padding-bottom: 3px")
         self.status.setText("Waiting for data...")
 
         self.statusBar().addWidget(self.status, 1)
 
-        self.rno.editingFinished.connect(lambda: self.rno.setText(self.rno.text().upper()))
         self.rno.textChanged.connect(self.handleRollNo)
+        self.rno.returnPressed.connect(lambda: self.handleRollNo(self.rno.text()))
         self.rno.returnPressed.connect(lambda: self.PassType.setFocus())
 
         self.PassType.currentIndexChanged.connect(lambda idx: self.GenPassBtn.setEnabled(idx > -1))
         self.GenPassBtn.pressed.connect(self.generatePass)
 
         self.setupOptions()
-        self.handleRollNo("")
+        self.setupUI()
 
-    @pyqtSlot(str)
-    def handleRollNo(self, _):
-        self.rno.setText(self.rno.text().upper())
-        rno = self.rno.text()
-
+    def setupUI(self, rno: str = "") -> False:
         if not fullmatch("\d{2}BD1A\d{2}[A-HJ-NP-RT-Z0-9]{2}", rno):
             self.PassType.setCurrentIndex(-1)
             self.PassType.setDisabled(True)
@@ -83,29 +77,45 @@ class MainWin(QMainWindow):
             self.details.setAlignment(Qt.AlignmentFlag.AlignCenter)
             self.invalid.setText("Invalid Roll No." if len(rno)==10 else "")
             self.status.setText("Invalid Roll No." if len(rno)==10 else "Waiting for data")
-            return
+            return False
+        self.status.setText("Processing")
+        return True
+
+    @pyqtSlot(str)
+    def handleRollNo(self, rno: str) -> None:
+        rno = rno.upper()
         
+        if not self.setupUI(rno): return
+        
+        self.rno.setReadOnly(True)
+
         self.StateHandler = QThread()
         self.detailsUpdater = DetailsFetcher(rno)
         self.detailsUpdater.moveToThread(self.StateHandler)
         self.StateHandler.started.connect(self.detailsUpdater.updateDetails)
+        self.StateHandler.started.connect(lambda: self.status.setText("Processing"))
 
         self.detailsUpdater.error.connect(self.error)
         self.detailsUpdater.success.connect(self.updateUI)
+        self.detailsUpdater.success.connect(lambda: self.status.setText("Ready"))
+        self.detailsUpdater.success.connect(self.StateHandler.quit)
 
+        self.StateHandler.finished.connect(lambda: self.rno.setReadOnly(False)) 
         self.StateHandler.finished.connect(self.detailsUpdater.deleteLater) 
         self.StateHandler.finished.connect(self.StateHandler.deleteLater) 
         self.StateHandler.start()
         # self._SetImg("Processing")
 
-        admn_yr = int(rno[:2])
-
         self.PassType.setEnabled(True)
-        self.PassType.model().item(2).setEnabled(admn_yr < YEAR-3 or 
-                                                 (admn_yr == YEAR-3 and DATE.month > 6))
+        
+        # admn_yr = int(rno[:2])
+        # self.PassType.model().item(2).setEnabled(admn_yr < YEAR-3 or 
+        #                                          (admn_yr == YEAR-3 and DATE.month > 6))
 
     @pyqtSlot(dict)
-    def updateUI(self, student_details):
+    def updateUI(self, student_details) -> None:
+        self.PassType.model().item(2).setEnabled(int(student_details['year'])==4)
+
         self.details.setText(f"##### Name:\n### {student_details['name']}\n---\n#### Section: {student_details['dept']}-{student_details['section']}\n#### Year: {student_details['year']}\n")
         self.details.setStyleSheet("color: #000")
         self.details.setAlignment(Qt.AlignmentFlag.AlignLeft|Qt.AlignmentFlag.AlignVCenter)
@@ -187,15 +197,18 @@ class MainWin(QMainWindow):
 
         if result.startswith("Error:"):
             self.error(result.split(":", 1)[1])
-            self.status.setText("Waiting...")
+            self.status.setText("Error")
         elif result.startswith("Traceback"):
             self.error(f"Server error. Returned:\n{result}")
-            self.status.setText("Waiting...")
+            self.status.setText("Server Error")
         elif result.startswith("Warning:"):
-            self.error(result.split(":", 1)[1])
+            self.status.setText("Done")
         elif response.status_code == 200: 
             self.success("Pass Successfully created")
             self.status.setText("Done")
+        else:
+            self.error(f"Unexpected server-side error:\nResponse code: {response.status_code}\n{response.content.decode()}")
+
 
     @pyqtSlot(str)
     def error(self, msg):
@@ -219,7 +232,6 @@ class DetailsFetcher(QObject):
         super().__init__(None)
 
     def updateDetails(self):
-        print("Started")
         try: 
             self.res = urlget(f"{SERVERURL}/get_student_data?rollno={self.rno}", headers=headers)
         except (ConnectionError, Timeout):
@@ -245,7 +257,7 @@ if __name__ == '__main__':
     elif ostype == "Darwin": iconext = "icns"
 
     app = QApplication(argv)
-    app.setAttribute(Qt.AA_DisableWindowContextHelpButton)
+    app.setAttribute(Qt.ApplicationAttribute.AA_DisableWindowContextHelpButton)
     win = MainWin()
     win.setWindowIcon(QIcon(f"{DATA_DIR}/kmit.{iconext}"))
     win.show()
