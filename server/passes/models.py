@@ -1,5 +1,5 @@
 from django.db import models
-from typing import Generic, TypeVar
+from typing import Generic, TypeVar, Union
 from bulk_update_or_create import BulkUpdateOrCreateQuerySet
 import json
 
@@ -43,7 +43,10 @@ class Student(models.Model):
     year = models.CharField(max_length=2, default="-1")
     dept = models.CharField(max_length=5)
     section = models.CharField(max_length=5)
-    picture = models.CharField(max_length=60)
+    picture = models.CharField(max_length=60, null=True)
+
+    # def json(self):
+    #     return
 
     class Meta:
         db_table = "student"
@@ -68,7 +71,7 @@ class ResStudent(Schema):
     year : str
     dept: str
     section: str
-    picture : str
+    picture : Union[str , None]
 
 
 

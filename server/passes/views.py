@@ -1,5 +1,6 @@
 import json
 import base64
+from urllib import response
 
 from django.http import HttpResponse, HttpRequest
 from ninja import NinjaAPI
@@ -7,7 +8,7 @@ from passes.models import *
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 import pytz
-from typing import List
+from typing import List, Union
 import requests
 
 from passes import utlis
@@ -151,15 +152,18 @@ def get_valid_passes(request: HttpRequest):
     return HttpResponse(json.dumps(pass_json), content_type="application/json")
 
 
-@api.get("/get_student_data", auth=Auth(), response=ResStudent)
+@api.get("/get_student_data", auth=Auth(), response={200:ResStudent, 404: str})
 def get_student_data(request: HttpRequest, rollno: str):
     res = Student.objects.filter(rollno=rollno).first()
     if res==None:
-        return HttpResponse("rollno not valid")
-    picture_bytes = requests.get(res.picture).content
 
-    picture_b64 = base64.b64encode(picture_bytes)
+        return 404,"No rollno found"
+    picture_bytes = None
+    try:
+        picture_bytes = requests.get(str(res.picture), timeout=3).content
+        picture_b64 = base64.b64encode(picture_bytes)
+        res.picture = picture_b64.decode()
+    except:
+        res.picture = None
 
-    res.picture = picture_b64.decode()
-
-    return res
+    return 200,res
