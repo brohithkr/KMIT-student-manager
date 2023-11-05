@@ -53,6 +53,9 @@
        <height>25</height>
       </rect>
      </property>
+     <property name="styleSheet">
+      <string notr="true">text-transform: uppercase</string>
+     </property>
      <property name="maxLength">
       <number>10</number>
      </property>

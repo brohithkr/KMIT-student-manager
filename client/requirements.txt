@@ -1,4 +1,5 @@
 pyqt5
+qasync
 requests
 
 # # for frozen executable
