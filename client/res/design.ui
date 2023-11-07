@@ -60,7 +60,7 @@
       <number>10</number>
      </property>
      <property name="placeholderText">
-      <string>__BD_1A____</string>
+      <string>__BD_A____</string>
      </property>
     </widget>
     <widget class="QComboBox" name="PassType">

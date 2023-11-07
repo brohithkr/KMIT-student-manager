@@ -67,7 +67,7 @@ class MainWin(QMainWindow):
         self.setupUI()
 
     def setupUI(self, rno: str = "") -> False:
-        if not fullmatch("\d{2}BD1A\d{2}[A-HJ-NP-RT-Z0-9]{2}", rno):
+        if not fullmatch("\d{2}BD[15]A\d{2}[A-HJ-NP-RT-Z0-9]{2}", rno):
             self.PassType.setCurrentIndex(-1)
             self.PassType.setDisabled(True)
             self.GenPassBtn.setDisabled(True)
@@ -120,7 +120,8 @@ class MainWin(QMainWindow):
         self.details.setStyleSheet("color: #000")
         self.details.setAlignment(Qt.AlignmentFlag.AlignLeft|Qt.AlignmentFlag.AlignVCenter)
 
-        if student_details["picture"] == None:
+                                                # 403 while fetching image
+        if student_details["picture"] in {None, "PCFET0NUWVBFIEhUTUwgUFVCTElDICItLy9JRVRGLy9EVEQgSFRNTCAyLjAvL0VOIj4KPGh0bWw+PGhlYWQ+Cjx0aXRsZT40MDMgRm9yYmlkZGVuPC90aXRsZT4KPC9oZWFkPjxib2R5Pgo8aDE+Rm9yYmlkZGVuPC9oMT4KPHA+WW91IGRvbid0IGhhdmUgcGVybWlzc2lvbiB0byBhY2Nlc3MgdGhpcyByZXNvdXJjZS48L3A+CjxwPkFkZGl0aW9uYWxseSwgYSA0MDMgRm9yYmlkZGVuCmVycm9yIHdhcyBlbmNvdW50ZXJlZCB3aGlsZSB0cnlpbmcgdG8gdXNlIGFuIEVycm9yRG9jdW1lbnQgdG8gaGFuZGxlIHRoZSByZXF1ZXN0LjwvcD4KPC9ib2R5PjwvaHRtbD4K"}:
             self._SetImg(*anonymous_img)
             self._SetImg("Image not found", "Error", False)
         else:
