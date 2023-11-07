@@ -104,7 +104,6 @@ class MainWin(QMainWindow):
         self.StateHandler.finished.connect(self.detailsUpdater.deleteLater) 
         self.StateHandler.finished.connect(self.StateHandler.deleteLater) 
         self.StateHandler.start()
-        # self._SetImg("Processing")
 
         self.PassType.setEnabled(True)
         

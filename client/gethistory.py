@@ -83,7 +83,6 @@ class GetHistoryDialog(QDialog):
             if not self.fullHistory.isChecked(): args += f"&frm={start}&to={end}"
         elif not self.fullHistory.isChecked(): args += f"&frm={start}&to={end}"
         open_in_browser(f"{baseurl}?{args}") 
-        # open_in_browser("https://google.co.in")
         self.parent().success("CSV Download started in browser.")
         self.close()
 

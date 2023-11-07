@@ -54,11 +54,6 @@ class LunchTimeDialog(QDialog):
 
     def getLunchTime(self):
         res = urlget(f"{SERVERURL}/get_timings").json()
-        # if (msg:=res["msg"]) == "Invalid":
-        #     self.parent().error(msg)
-        # res = [{"start": "12:10 PM", "end": "01:00 PM"},
-        #               {"start": "01:10 PM", "end": "02:00 PM"},
-        #               {"start": "01:10 PM", "end": "02:00 PM"}]
         for i in range(3):
             start = datetime.strptime(res[i]["opening_time"], "%H:%M").time()
             end = datetime.strptime(res[i]["closing_time"], "%H:%M").time()
