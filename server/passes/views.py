@@ -166,9 +166,12 @@ def get_student_data(request: HttpRequest, rollno: str):
         return 404,"No rollno found"
     picture_bytes = None
     try:
-        picture_bytes = requests.get(str(res.picture), timeout=3).content
+        image_res = requests.get(str(res.picture), timeout=3)
+        picture_bytes = image_res.content
         picture_b64 = base64.b64encode(picture_bytes)
         res.picture = picture_b64.decode()
+        if(image_res.status_code == 403):
+            res.picture = None
     except:
         res.picture = None
 
