@@ -57,8 +57,8 @@ class MainWin(QMainWindow):
         self.statusBar().addWidget(self.status, 1)
 
         self.rno.textChanged.connect(self.handleRollNo)
-        self.rno.returnPressed.connect(lambda: self.handleRollNo(self.rno.text()))
-        self.rno.returnPressed.connect(lambda: self.PassType.setFocus())
+        self.handleRollNo_conn = self.rno.returnPressed.connect(lambda: self.handleRollNo(self.rno.text()))
+        # self.rno.returnPressed.connect(lambda: self.PassType.setFocus())
 
         self.PassType.currentIndexChanged.connect(lambda idx: self.GenPassBtn.setEnabled(idx > -1))
         self.GenPassBtn.pressed.connect(self.generatePass)
@@ -81,6 +81,11 @@ class MainWin(QMainWindow):
         self.status.setText("Processing")
         return True
 
+    @pyqtSlot()
+    def reconnectRnoHandler(self) -> None:
+        self.handleRollNo_conn = self.rno.returnPressed.connect(lambda: self.handleRollNo(self.rno.text()))
+        self.rno.setReadOnly(False)
+
     @pyqtSlot(str)
     def handleRollNo(self, rno: str) -> None:
         rno = rno.upper()
@@ -88,6 +93,7 @@ class MainWin(QMainWindow):
         if not self.setupUI(rno): return
         
         self.rno.setReadOnly(True)
+        self.rno.returnPressed.disconnect(self.handleRollNo_conn)
 
         self.StateHandler = QThread()
         self.detailsUpdater = DetailsFetcher(rno)
@@ -95,17 +101,18 @@ class MainWin(QMainWindow):
         self.StateHandler.started.connect(self.detailsUpdater.updateDetails)
         self.StateHandler.started.connect(lambda: self.status.setText("Processing"))
 
-        self.detailsUpdater.error.connect(self.error)
+        self.detailsUpdater.error.connect(lambda err: (self.error(err), self.status.setText("Error")))
+        self.detailsUpdater.error.connect(self.StateHandler.quit)
         self.detailsUpdater.success.connect(self.updateUI)
         self.detailsUpdater.success.connect(lambda: self.status.setText("Ready"))
         self.detailsUpdater.success.connect(self.StateHandler.quit)
 
-        self.StateHandler.finished.connect(lambda: self.rno.setReadOnly(False)) 
         self.StateHandler.finished.connect(self.detailsUpdater.deleteLater) 
         self.StateHandler.finished.connect(self.StateHandler.deleteLater) 
+        self.StateHandler.finished.connect(self.reconnectRnoHandler)
+        self.StateHandler.finished.connect(lambda: self.PassType.setEnabled(True))
         self.StateHandler.start()
 
-        self.PassType.setEnabled(True)
         
         # admn_yr = int(rno[:2])
         # self.PassType.model().item(2).setEnabled(admn_yr < YEAR-3 or 
@@ -236,6 +243,7 @@ class DetailsFetcher(QObject):
             self.res = urlget(f"{SERVERURL}/get_student_data?rollno={self.rno}", headers=headers)
         except (ConnectionError, Timeout):
             self.error.emit("Unable to connect to server. Check connection & Try again.")
+            return
         else:
             if self.res.status_code == 200:
                 self.success.emit(self.res.json())
