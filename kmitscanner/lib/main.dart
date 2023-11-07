@@ -1,10 +1,12 @@
-// ignore_for_file: prefer_const_constructors
+// ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
+import './db_handling.dart';
 
-void main() {
+import './utlis.dart' as utlis;
+
+void main() async {
+  // await ValidPass.loadAll();
   runApp(const MyApp());
 }
 
@@ -36,25 +38,6 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  String _scanData = "--";
-  void scanQR() async {
-    String scanRes;
-    try {
-      scanRes = await FlutterBarcodeScanner.scanBarcode(
-        '#ff6666',
-        'Cancel',
-        false,
-        ScanMode.BARCODE,
-      );
-    } on PlatformException {
-      scanRes = 'Failed to get platform version.';
-    }
-
-    setState(() {
-      _scanData = scanRes;
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -66,30 +49,96 @@ class _HomePageState extends State<HomePage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            MyButton(label: "Scan Passes", toDo: scanQR),
-            MyButton(label: "Scan Latecomers", toDo: scanQR)
+            MyButton(
+              label: "Scan Passes",
+              todo: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) {
+                      String initData = utlis.scanQR();
+                      return ScanPage(
+                          toScan: "Scan Passes", initData: initData);
+                    },
+                  ),
+                );
+              },
+            ),
+            MyButton(
+              label: "Scan Latecomers",
+              todo: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) {
+                      String initData = utlis.scanQR();
+                      return ScanPage(
+                          toScan: "Scan Latecomers", initData: initData);
+                    },
+                  ),
+                );
+              },
+            )
           ],
         ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {},
       ),
     );
   }
 }
 
+class ScanPage extends StatefulWidget {
+  const ScanPage({super.key, required this.toScan, required this.initData});
+  final String toScan;
+  final String initData;
+
+  @override
+  State<ScanPage> createState() => _ScanPageState();
+}
+
+class _ScanPageState extends State<ScanPage> {
+  late String _scanData;
+
+  void handleScan() async {
+    String scanData = await utlis.scanQR();
+    setState(() {
+      _scanData = scanData;
+    });
+  }
+
+  @override
+  void initState() {
+    _scanData = widget.initData;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_scanData == "-1" || _scanData == "--") {
+      return Center(
+        child: MyButton(
+            label: widget.toScan,
+            todo: () {
+              handleScan();
+            }),
+      );
+    } else {
+      // if (widget.toScan == "Scan Passes") {}
+      return Placeholder();
+    }
+  }
+}
+
 class MyButton extends StatelessWidget {
-  const MyButton({
-    super.key,
-    required this.label,
-    required this.toDo,
-  });
+  const MyButton({super.key, required this.label, required this.todo});
   final String label;
-  final Function toDo;
+  final void Function() todo;
 
   @override
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: ElevatedButton(
-        onPressed: () {},
+        onPressed: todo,
         child: Padding(
           padding: const EdgeInsets.all(5),
           child: Text(

@@ -2,7 +2,7 @@ import json
 import base64
 from urllib import response
 
-from django.http import HttpResponse, HttpRequest
+from django.http import HttpResponse, HttpRequest, JsonResponse
 from ninja import NinjaAPI
 from passes.models import *
 from datetime import datetime, timedelta
@@ -55,6 +55,11 @@ def edit_timings(request: HttpRequest, timings: List[ReqLunchTiming]):
             timings_lst, ["opening_time", "closing_time"], match_field="year"
         )
     return "success"
+
+@api.get("/get_timings")
+def get_timings(request: HttpRequest):
+    res = LunchTiming.objects.all()
+    JsonResponse(res)
 
 
 @api.get("/isvalid")

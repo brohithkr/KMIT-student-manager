@@ -29,6 +29,13 @@ class LunchTiming(models.Model):
     opening_time = models.CharField(max_length=10)
     closing_time = models.CharField(max_length=10)
 
+    def json(self):
+        return {
+            "year": self.year,
+            "opening_time": self.opening_time,
+            "closing_time": self.closing_time,
+        }
+
     class Meta:
         db_table = "lunch_timings"
 
