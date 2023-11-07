@@ -59,7 +59,8 @@ def edit_timings(request: HttpRequest, timings: List[ReqLunchTiming]):
 @api.get("/get_timings")
 def get_timings(request: HttpRequest):
     res = LunchTiming.objects.all()
-    JsonResponse(res)
+    res_json = [i.json() for i in res]
+    return HttpResponse(json.dumps(res_json), content_type="application/json")
 
 
 @api.get("/isvalid")
