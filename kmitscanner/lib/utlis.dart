@@ -16,7 +16,7 @@ scanQR() async {
     scanRes = await FlutterBarcodeScanner.scanBarcode(
       '#ff6666',
       'Cancel',
-      false,
+      true,
       ScanMode.BARCODE,
     );
   } on PlatformException {
@@ -47,7 +47,15 @@ dynamic getDecryptedData(String endata) {
   return res;
 }
 
-Future<bool> isValidPass(dynamic pass) async {
+Future<bool> isValidPass(rollno) async {
+  var passFuture = ValidPass.by(rollno: rollno);
+  var res = await _isValidPass(passFuture);
+  return res;
+}
+
+Future<bool> _isValidPass(Future<List<Map<String, Object?>>> passFuture) async {
+  var pass_ = (await passFuture)[0];
+  dynamic pass = {};
   // print(timings[]);
   int validTill = (pass['valid_till']);
   var now = DateTime.now();
@@ -55,7 +63,7 @@ Future<bool> isValidPass(dynamic pass) async {
     return false;
   }
 
-  int year = rollToYear(pass['rno']);
+  int year = rollToYear(pass['rollno']);
   if (year >= 4) {
     return true;
   }
@@ -80,6 +88,29 @@ Future<bool> isValidPass(dynamic pass) async {
 
   return true;
 }
+
+Future<bool> refresh({bool startup = false}) async {
+  if (startup) {
+    if (await isDbPresent()) {
+      return true;
+    }
+  }
+  try {
+    await refreshTimings();
+    await ValidPass.loadAll();
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+// Future<bool> refreshStartup() async {
+//   if (await isDbPresent()) {
+//     return refresh();
+//   } else {
+//     return
+//   }
+// }
 
 void main() async {
   String now = (DateTime.now().millisecondsSinceEpoch.toString());

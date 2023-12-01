@@ -1,16 +1,27 @@
 import 'dart:async';
 
 import 'dart:convert';
+import 'dart:io';
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
+// import 'package:sqflite_common_ffi/sqflite_ffi.dart';
 
 import 'package:http/http.dart' as http;
 import 'secrets.dart';
 
+const String dbname = "scanner_data.db";
+
+Future<bool> isDbPresent() async {
+  // databaseFactory = databaseFactoryFfi;
+  var dbPath = join(await getDatabasesPath(), dbname);
+  var res = await File(dbPath).exists();
+  return res;
+}
+
 void createTables(Database db) {
   // db.execute('CREATE TABLE latecomers (rollno varchar(11), date integer)');
   db.execute('''CREATE TABLE valid_pass (
-    rollno varchar(11),
+    roll_no varchar(11),
     issue_date BIGINT,
     valid_till BIGINT
   )''');
@@ -28,10 +39,10 @@ void createTables(Database db) {
 }
 
 Future<Database> openDB() async {
-  // await databaseFactory
-  //     .deleteDatabase(join(await getDatabasesPath(), 'data.db'));
+  await databaseFactory
+      .deleteDatabase(join(await getDatabasesPath(), 'data.db'));
   final database = openDatabase(
-    join(await getDatabasesPath(), 'data.db'),
+    join(await getDatabasesPath(), dbname),
     onCreate: (db, version) {
       createTables(db);
     },
@@ -50,16 +61,18 @@ class ValidPass {
 
   Map<String, dynamic> toMap() {
     return {
-      "rollno": rollno,
+      "roll_no": rollno,
       "issue_date": issue_date,
       "valid_till": valid_till,
     };
   }
 
-  Future<List<Map<String, Object?>>> by({required String rollno}) async {
+  static Future<List<Map<String, Object?>>> by({required String rollno}) async {
     final db = await openDB();
+    // var x = await db.query(tablename, columns: null, where: null);
     var res = await db.query(tablename,
         columns: null, where: "rollno = ?", whereArgs: [rollno]);
+
     return res;
   }
 
@@ -78,8 +91,12 @@ class ValidPass {
   static Future<bool> loadAll() async {
     try {
       var db = await openDB();
-      var res = await http.get(Uri.parse("$hostUrl/get_valid_passes"));
-      db.insert(tablename, jsonDecode(res.body));
+      var res = (await http.get(Uri.parse("$hostUrl/get_valid_passes")));
+      var resJson = jsonDecode(res.body);
+      for (var i in resJson) {
+        db.insert(tablename, i);
+      }
+      // print()
       return true;
     } catch (e) {
       return false;
@@ -93,11 +110,13 @@ dynamic getTimings() async {
   return res;
 }
 
-void refreshTimings() async {
+Future<void> refreshTimings() async {
   var res = await http.get(Uri.parse('$hostUrl/get_timings'));
   var timings = jsonDecode(res.body);
   var db = await openDB();
   for (var i in timings) {
+    // i["rollno"] = i["roll_no"];
+    // i.remove("roll_no");
     db.update("Lunch_Timings", i, where: 'year = ?', whereArgs: [i['year']]);
   }
 }
