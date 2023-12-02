@@ -18,14 +18,14 @@ import './utlis.dart' as utlis;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  if(Platform.isAndroid) {
+  if (Platform.isAndroid) {
     final dir = await getApplicationDocumentsDirectory();
     final path = dir.parent.path;
-    final file = File('$path/databases/com.google.android.datatransport.events');
+    final file =
+        File('$path/databases/com.google.android.datatransport.events');
     await file.writeAsString('Fake');
   }
   runApp(const MyApp());
-  
 }
 
 class MyApp extends StatelessWidget {
@@ -51,10 +51,12 @@ class MyApp extends StatelessWidget {
           future: loaded,
           builder: (context, snapshot) {
             if (snapshot.data == null) {
-              return Center(
-                child: SpinKitCircle(
-                  color: Theme.of(context).colorScheme.onBackground,
-                  size: 40,
+              return Scaffold(
+                body: Center(
+                  child: SpinKitCircle(
+                    color: Theme.of(context).colorScheme.onBackground,
+                    size: 40,
+                  ),
                 ),
               );
             }
@@ -75,7 +77,8 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   // late String _scanData;
 
-  void handleScan(context, title, affirmFun) async {
+  void handleScan(
+      context, title, Future<bool> Function(String) affirmFun) async {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) {
@@ -86,13 +89,12 @@ class _HomePageState extends State<HomePage> {
                 showDialog(
                   context: context,
                   builder: (context) {
-                    return Dialog(
-                      child: Container(
-                        width: deviceSize.width * .8,
-                        height: deviceSize.width * .8,
-                        decoration: BoxDecoration(color: Colors.amber),
-                      ),
-                    );
+                    var affirm = affirmFun(scanRes);
+                    return FutureBuilder(
+                        future: affirm,
+                        builder: (context, snap) {
+                          return AffirmBox(isValid: snap.data ?? false);
+                        });
                   },
                 );
               });
@@ -126,7 +128,7 @@ class _HomePageState extends State<HomePage> {
                   MyButton(
                     label: "Scan Latecomers",
                     todo: () {
-                      handleScan(context, "Scan Latecomers", () {});
+                      handleScan(context, "Scan Latecomers", utlis.isValidPass);
                     },
                   )
                 ],
@@ -147,63 +149,6 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
-class _ScanPageState extends State<ScanPage> {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold();
-  }
-}
-
-class ScanPageOld extends StatefulWidget {
-  const ScanPageOld({super.key, required this.toScan, required this.initData});
-  final String toScan;
-  final String initData;
-
-  @override
-  State<ScanPageOld> createState() => _ScanPageOldState();
-}
-
-class _ScanPageOldState extends State<ScanPageOld> {
-  late String _scanData;
-
-  void handleScan() async {
-    String scanData = await utlis.scanQR();
-    setState(() {
-      _scanData = scanData;
-    });
-  }
-
-  @override
-  void initState() {
-    _scanData = widget.initData;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    if (_scanData == "-1" || _scanData == "--") {
-      return Center(
-        child: MyButton(
-            label: widget.toScan,
-            todo: () {
-              handleScan();
-            }),
-      );
-    } else {
-      // if (widget.toScan == "Scan Passes") {}
-      var passFuture = (db.ValidPass.by(rollno: _scanData));
-      return FutureBuilder(
-          future: passFuture,
-          builder: (context, snapshot) {
-            var pass = snapshot.data ?? [];
-            if (pass.isEmpty) {
-              return AffirmBox(isValid: true);
-            } else {
-              return AffirmBox(isValid: false);
-            }
-          });
-    }
-  }
-}
 
 class AffirmBox extends StatelessWidget {
   const AffirmBox({super.key, required this.isValid});
@@ -266,54 +211,6 @@ class MyButton extends StatelessWidget {
             ),
           ),
         ),
-      ),
-    );
-  }
-}
-
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  final String title;
-
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      _counter++;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(widget.title),
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
       ),
     );
   }

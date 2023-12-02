@@ -3,6 +3,12 @@ import 'package:flutter/services.dart';
 
 import 'package:mobile_scanner/mobile_scanner.dart';
 
+MobileScannerController controller = MobileScannerController(
+  detectionSpeed: DetectionSpeed.normal,
+  torchEnabled: false,
+  facing: CameraFacing.back,
+);
+
 class ScanPage extends StatefulWidget {
   const ScanPage({super.key, required this.title, required this.onScan});
 
@@ -30,6 +36,7 @@ class ScanPageState extends State<ScanPage> {
 
   @override
   Widget build(BuildContext context) {
+    var deviceSize = MediaQuery.of(context).size;
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.title),
@@ -38,9 +45,7 @@ class ScanPageState extends State<ScanPage> {
         child: Stack(
           children: [
             MobileScanner(
-              controller: MobileScannerController(
-                detectionSpeed: DetectionSpeed.noDuplicates,
-              ),
+              controller: controller,
               onDetect: (capture) {
                 debugPrint(toScan.toString());
                 var barcodes = capture.barcodes;
@@ -52,6 +57,26 @@ class ScanPageState extends State<ScanPage> {
               },
             ),
             RectangleOverlay(toDo: toggleScan),
+            Align(
+              alignment: Alignment.bottomLeft,
+              child: ValueListenableBuilder(
+                valueListenable: controller.torchState,
+                builder: (context, state, child) {
+                  return IconButton(
+                    onPressed: () {
+                      controller.toggleTorch();
+                    },
+                    icon: Icon(
+                      (state.rawValue == 0) ? Icons.flash_on : Icons.flash_off,
+                    ),
+                    iconSize: ((deviceSize.width / 6) < 90)
+                        ? deviceSize.width / 6
+                        : 90,
+                    color: Colors.white,
+                  );
+                },
+              ),
+            ),
           ],
         ),
       ),
@@ -80,18 +105,34 @@ class RectangleOverlay extends StatelessWidget {
             ),
           ),
         ),
-        IconButton(
-          onPressed: () {
-            HapticFeedback.vibrate();
-            toDo();
-          },
-          icon: Icon(
-            Icons.camera,
-            color: Colors.white,
-            size: ((deviceSize.width / 6) < 90) ? deviceSize.width/6 : 90,
-          ),
-        ),
+        ShutterButton(toDo: toDo, deviceSize: deviceSize),
       ],
+    );
+  }
+}
+
+class ShutterButton extends StatelessWidget {
+  const ShutterButton({
+    super.key,
+    required this.toDo,
+    required this.deviceSize,
+  });
+
+  final Function toDo;
+  final Size deviceSize;
+
+  @override
+  Widget build(BuildContext context) {
+    return IconButton(
+      onPressed: () {
+        HapticFeedback.vibrate();
+        toDo();
+      },
+      icon: Icon(
+        Icons.camera,
+        color: Colors.white,
+        size: ((deviceSize.width / 6) < 90) ? deviceSize.width / 6 : 90,
+      ),
     );
   }
 }
