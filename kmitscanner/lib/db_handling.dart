@@ -39,8 +39,7 @@ void createTables(Database db) {
 }
 
 Future<Database> openDB() async {
-  await databaseFactory
-      .deleteDatabase(join(await getDatabasesPath(), 'data.db'));
+  // await databaseFactory.deleteDatabase(join(await getDatabasesPath(), dbname));
   final database = openDatabase(
     join(await getDatabasesPath(), dbname),
     onCreate: (db, version) {
@@ -70,8 +69,12 @@ class ValidPass {
   static Future<List<Map<String, Object?>>> by({required String rollno}) async {
     final db = await openDB();
     // var x = await db.query(tablename, columns: null, where: null);
-    var res = await db.query(tablename,
-        columns: null, where: "rollno = ?", whereArgs: [rollno]);
+    var res = await db.query(
+      tablename,
+      columns: null,
+      where: "roll_no = ?",
+      whereArgs: [rollno],
+    );
 
     return res;
   }
@@ -92,15 +95,34 @@ class ValidPass {
     try {
       var db = await openDB();
       var res = (await http.get(Uri.parse("$hostUrl/get_valid_passes")));
+      // var res =
+      // var resJson = jsonDecode("[{roll_no: 22BD1A0511, issue_date: 1699107871, valid_till: 3908183071, pass_type: alumni}, {roll_no: 22BD1A0505, issue_date: 1699541920, valid_till: 3908617120, pass_type: alumni}]");
       var resJson = jsonDecode(res.body);
+      print(resJson);
+      print("json printing");
+      db.rawDelete("DELETE * FROM $tablename");
       for (var i in resJson) {
-        db.insert(tablename, i);
+        await db.insert(
+            tablename,
+            Map.from({
+              "roll_no": i["roll_no"],
+              "issue_date": i["issue_date"],
+              "valid_till": i["valid_till"],
+            }));
       }
       // print()
       return true;
     } catch (e) {
       return false;
     }
+  }
+
+  static Future<List<dynamic>> getAll() async {
+    var db = await openDB();
+    var res = await db.rawQuery('SELECT * from $tablename');
+    print(res);
+    // print("get all ran");
+    return res;
   }
 }
 

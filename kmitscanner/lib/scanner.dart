@@ -1,13 +1,13 @@
-import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 class ScanPage extends StatefulWidget {
-  const ScanPage({super.key, required this.onScan});
+  const ScanPage({super.key, required this.title, required this.onScan});
 
   final Function(String, BuildContext) onScan;
+  final String title;
 
   @override
   State<ScanPage> createState() => ScanPageState();
@@ -32,7 +32,7 @@ class ScanPageState extends State<ScanPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("scanner"),
+        title: Text(widget.title),
       ),
       body: Center(
         child: Stack(
@@ -45,7 +45,6 @@ class ScanPageState extends State<ScanPage> {
                 debugPrint(toScan.toString());
                 var barcodes = capture.barcodes;
                 debugPrint(barcodes[0].rawValue);
-                debugPrint("toScan.toString()");
                 if (toScan) {
                   widget.onScan(barcodes[0].rawValue ?? "None", context);
                   toggleScan();
@@ -89,7 +88,7 @@ class RectangleOverlay extends StatelessWidget {
           icon: Icon(
             Icons.camera,
             color: Colors.white,
-            size: deviceSize.width / 6,
+            size: ((deviceSize.width / 6) < 90) ? deviceSize.width/6 : 90,
           ),
         ),
       ],
@@ -98,7 +97,6 @@ class RectangleOverlay extends StatelessWidget {
 }
 
 class OverlayPainter extends CustomPainter {
-
   Size holeSize;
   OverlayPainter({required this.holeSize});
 

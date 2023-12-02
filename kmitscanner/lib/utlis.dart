@@ -98,6 +98,7 @@ Future<bool> refresh({bool startup = false}) async {
   try {
     await refreshTimings();
     await ValidPass.loadAll();
+    // await ValidPass.getAll();
     return true;
   } catch (e) {
     return false;

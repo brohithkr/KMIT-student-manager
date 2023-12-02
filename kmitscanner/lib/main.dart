@@ -1,10 +1,14 @@
 // ignore_for_file: prefer_const_constructors
 
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'color_schemes.g.dart';
+import 'package:path_provider/path_provider.dart';
 
 import './db_handling.dart' as db;
+import './scanner.dart';
 
 import './utlis.dart' as utlis;
 
@@ -14,8 +18,14 @@ import './utlis.dart' as utlis;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  var x = await db.ValidPass.by(rollno: "22BD1A0505");
+  if(Platform.isAndroid) {
+    final dir = await getApplicationDocumentsDirectory();
+    final path = dir.parent.path;
+    final file = File('$path/databases/com.google.android.datatransport.events');
+    await file.writeAsString('Fake');
+  }
   runApp(const MyApp());
+  
 }
 
 class MyApp extends StatelessWidget {
@@ -65,16 +75,27 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   // late String _scanData;
 
-  void handleScan(context, toScan) async {
-    String scanData = await utlis.scanQR();
+  void handleScan(context, title, affirmFun) async {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) {
-          String initData = scanData;
           return ScanPage(
-            toScan: "Scan Latecomers",
-            initData: initData,
-          );
+              title: title,
+              onScan: (scanRes, context) {
+                var deviceSize = MediaQuery.of(context).size;
+                showDialog(
+                  context: context,
+                  builder: (context) {
+                    return Dialog(
+                      child: Container(
+                        width: deviceSize.width * .8,
+                        height: deviceSize.width * .8,
+                        decoration: BoxDecoration(color: Colors.amber),
+                      ),
+                    );
+                  },
+                );
+              });
         },
       ),
     );
@@ -99,13 +120,13 @@ class _HomePageState extends State<HomePage> {
                   MyButton(
                     label: "Scan Passes",
                     todo: () {
-                      handleScan(context, "Scan Passes");
+                      handleScan(context, "Scan Passes", utlis.isValidPass);
                     },
                   ),
                   MyButton(
                     label: "Scan Latecomers",
                     todo: () {
-                      handleScan(context, "Scan Latecomers");
+                      handleScan(context, "Scan Latecomers", () {});
                     },
                   )
                 ],
@@ -126,16 +147,23 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
-class ScanPage extends StatefulWidget {
-  const ScanPage({super.key, required this.toScan, required this.initData});
+class _ScanPageState extends State<ScanPage> {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold();
+  }
+}
+
+class ScanPageOld extends StatefulWidget {
+  const ScanPageOld({super.key, required this.toScan, required this.initData});
   final String toScan;
   final String initData;
 
   @override
-  State<ScanPage> createState() => _ScanPageState();
+  State<ScanPageOld> createState() => _ScanPageOldState();
 }
 
-class _ScanPageState extends State<ScanPage> {
+class _ScanPageOldState extends State<ScanPageOld> {
   late String _scanData;
 
   void handleScan() async {
