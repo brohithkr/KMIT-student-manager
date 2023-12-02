@@ -54,17 +54,17 @@ Future<bool> isValidPass(rollno) async {
 }
 
 Future<bool> _isValidPass(Future<List<Map<String, Object?>>> passFuture) async {
-  var pass_ = (await passFuture)[0];
-  dynamic pass = {};
+  var pass = (await passFuture)[0];
+  // dynamic pass = {};
   // print(timings[]);
-  int validTill = (pass['valid_till']);
+  int validTill = (pass['valid_till'] as int);
   var now = DateTime.now();
   if (now.millisecondsSinceEpoch > validTill) {
     return false;
   }
 
-  int year = rollToYear(pass['rollno']);
-  if (year >= 4) {
+  int year = rollToYear(pass['rollno'] as String);
+  if (pass['pass_type'] == 'alumni' || pass['pass_type'] == 'single') {
     return true;
   }
   var timing = await getTimings()[year - 1];
@@ -98,7 +98,7 @@ Future<bool> refresh({bool startup = false}) async {
   try {
     await refreshTimings();
     await ValidPass.loadAll();
-    // await ValidPass.getAll();
+    print(await ValidPass.getAll());
     return true;
   } catch (e) {
     return false;

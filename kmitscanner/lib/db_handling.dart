@@ -100,7 +100,7 @@ class ValidPass {
       var resJson = jsonDecode(res.body);
       print(resJson);
       print("json printing");
-      db.rawDelete("DELETE * FROM $tablename");
+      db.rawDelete("DELETE FROM $tablename");
       for (var i in resJson) {
         await db.insert(
             tablename,
@@ -120,7 +120,7 @@ class ValidPass {
   static Future<List<dynamic>> getAll() async {
     var db = await openDB();
     var res = await db.rawQuery('SELECT * from $tablename');
-    print(res);
+    // print(res);
     // print("get all ran");
     return res;
   }
