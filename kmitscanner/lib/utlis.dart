@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter/services.dart';
-import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
 
 import 'secrets.dart';
 
@@ -9,21 +8,6 @@ import './db_handling.dart';
 // import 'ffi.dart';
 
 // var hosturl = "http://localhost:3000";
-
-scanQR() async {
-  String scanRes;
-  try {
-    scanRes = await FlutterBarcodeScanner.scanBarcode(
-      '#ff6666',
-      'Cancel',
-      true,
-      ScanMode.BARCODE,
-    );
-  } on PlatformException {
-    scanRes = 'Failed to get platform version.';
-  }
-  return scanRes;
-}
 
 int rollToYear(String rollno) {
   var today = DateTime.now();
@@ -49,22 +33,18 @@ dynamic getDecryptedData(String endata) {
 
 Future<bool> isValidPass(rollno) async {
   var passFuture = ValidPass.by(rollno: rollno);
-  var res = await _isValidPass(passFuture);
-  return res;
-}
-
-Future<bool> _isValidPass(Future<List<Map<String, Object?>>> passFuture) async {
+  // var res = await _isValidPass(passFuture);
   var pass = (await passFuture)[0];
-  // dynamic pass = {};
-  // print(timings[]);
+
   int validTill = (pass['valid_till'] as int);
   var now = DateTime.now();
-  if (now.millisecondsSinceEpoch > validTill) {
+  if (now.millisecondsSinceEpoch > validTill * 1000) {
     return false;
   }
 
   int year = rollToYear(pass['rollno'] as String);
-  if (pass['pass_type'] == 'alumni' || pass['pass_type'] == 'single') {
+  if (pass['pass_type'] == 'alumni' || pass['pass_type'] == 'single_use') {
+    print("Is True");
     return true;
   }
   var timing = await getTimings()[year - 1];
@@ -89,6 +69,10 @@ Future<bool> _isValidPass(Future<List<Map<String, Object?>>> passFuture) async {
   return true;
 }
 
+// Future<bool> _isValidPass(Future<List<Map<String, Object?>>> passFuture) async {
+
+// }
+
 Future<bool> refresh({bool startup = false}) async {
   if (startup) {
     if (await isDbPresent()) {
@@ -98,7 +82,7 @@ Future<bool> refresh({bool startup = false}) async {
   try {
     await refreshTimings();
     await ValidPass.loadAll();
-    print(await ValidPass.getAll());
+    print(await isValidPass("22BD1A0505"));
     return true;
   } catch (e) {
     return false;

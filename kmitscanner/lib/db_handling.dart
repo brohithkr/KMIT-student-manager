@@ -22,6 +22,7 @@ void createTables(Database db) {
   // db.execute('CREATE TABLE latecomers (rollno varchar(11), date integer)');
   db.execute('''CREATE TABLE valid_pass (
     roll_no varchar(11),
+    pass_type varchar(10),
     issue_date BIGINT,
     valid_till BIGINT
   )''');
@@ -52,15 +53,23 @@ Future<Database> openDB() async {
 
 class ValidPass {
   String rollno;
+  String pass_type;
   BigInt issue_date;
   BigInt valid_till;
-  ValidPass(this.rollno, this.issue_date, this.valid_till);
+
+  ValidPass(
+    this.rollno,
+    this.pass_type,
+    this.issue_date,
+    this.valid_till,
+  );
 
   static const tablename = "valid_pass";
 
   Map<String, dynamic> toMap() {
     return {
       "roll_no": rollno,
+      "pass_type": pass_type,
       "issue_date": issue_date,
       "valid_till": valid_till,
     };
@@ -98,8 +107,6 @@ class ValidPass {
       // var res =
       // var resJson = jsonDecode("[{roll_no: 22BD1A0511, issue_date: 1699107871, valid_till: 3908183071, pass_type: alumni}, {roll_no: 22BD1A0505, issue_date: 1699541920, valid_till: 3908617120, pass_type: alumni}]");
       var resJson = jsonDecode(res.body);
-      print(resJson);
-      print("json printing");
       db.rawDelete("DELETE FROM $tablename");
       for (var i in resJson) {
         await db.insert(
@@ -108,6 +115,7 @@ class ValidPass {
               "roll_no": i["roll_no"],
               "issue_date": i["issue_date"],
               "valid_till": i["valid_till"],
+              "pass_type": i["pass_type"]
             }));
       }
       // print()

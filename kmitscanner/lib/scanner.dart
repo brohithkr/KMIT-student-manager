@@ -4,7 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 
 MobileScannerController controller = MobileScannerController(
-  detectionSpeed: DetectionSpeed.normal,
+  detectionSpeed: DetectionSpeed.unrestricted,
   torchEnabled: false,
   facing: CameraFacing.back,
 );
@@ -51,12 +51,23 @@ class ScanPageState extends State<ScanPage> {
                 var barcodes = capture.barcodes;
                 debugPrint(barcodes[0].rawValue);
                 if (toScan) {
+                  // print(barcodes[0].rawValue);
                   widget.onScan(barcodes[0].rawValue ?? "None", context);
                   toggleScan();
                 }
               },
             ),
             RectangleOverlay(toDo: toggleScan),
+            Align(
+              alignment: Alignment.bottomCenter,
+              child: ShutterButton(
+                  toDo: () {
+                    if (!toScan) {
+                      toggleScan();
+                    }
+                  },
+                  deviceSize: deviceSize),
+            ),
             Align(
               alignment: Alignment.bottomLeft,
               child: ValueListenableBuilder(
@@ -105,7 +116,6 @@ class RectangleOverlay extends StatelessWidget {
             ),
           ),
         ),
-        ShutterButton(toDo: toDo, deviceSize: deviceSize),
       ],
     );
   }
@@ -150,15 +160,17 @@ class OverlayPainter extends CustomPainter {
         PathOperation.difference,
         Path()..addRect(Rect.fromLTWH(0, 0, size.width, size.height)),
         Path()
-          ..addRRect(RRect.fromRectAndRadius(
-            Rect.fromLTWH(
-              size.width / 8,
-              size.height / 8,
-              holeSize.width,
-              holeSize.height,
+          ..addRRect(
+            RRect.fromRectAndRadius(
+              Rect.fromLTWH(
+                size.width / 8,
+                size.height / 8,
+                holeSize.width,
+                holeSize.height,
+              ),
+              Radius.circular(10),
             ),
-            Radius.circular(10),
-          )),
+          ),
       ),
       paint,
     );

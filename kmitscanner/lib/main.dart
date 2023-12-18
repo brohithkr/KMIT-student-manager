@@ -4,27 +4,25 @@ import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 import 'color_schemes.g.dart';
-import 'package:path_provider/path_provider.dart';
+// import 'package:path_provider/path_provider.dart';
+// import 'package:skeletonizer/skeletonizer.dart';
 
-import './db_handling.dart' as db;
+// import './db_handling.dart' as db;
 import './scanner.dart';
 
 import './utlis.dart' as utlis;
 
-// class Collection {
-//   Future<> is
-// }
-
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  if (Platform.isAndroid) {
-    final dir = await getApplicationDocumentsDirectory();
-    final path = dir.parent.path;
-    final file =
-        File('$path/databases/com.google.android.datatransport.events');
-    await file.writeAsString('Fake');
-  }
+  // if (Platform.isAndroid) {
+  //   final dir = await getApplicationDocumentsDirectory();
+  //   final path = dir.parent.path;
+  //   final file =
+  //       File('$path/databases/com.google.android.datatransport.events');
+  //   await file.writeAsString('Fake');
+  // }
   runApp(const MyApp());
 }
 
@@ -33,7 +31,7 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    String title = "Kmit Scanner";
+    String title = "Garuda Scanner";
     Future<bool> loaded = utlis.refresh();
 
     return MaterialApp(
@@ -50,17 +48,20 @@ class MyApp extends StatelessWidget {
           initialData: null,
           future: loaded,
           builder: (context, snapshot) {
-            if (snapshot.data == null) {
-              return Scaffold(
-                body: Center(
-                  child: SpinKitCircle(
-                    color: Theme.of(context).colorScheme.onBackground,
-                    size: 40,
-                  ),
-                ),
-              );
-            }
-            return HomePage(title: title);
+            // if (snapshot.data == null) {
+            //   return Scaffold(
+            //     body: Center(
+            //       child: SpinKitCircle(
+            //         color: Theme.of(context).colorScheme.onBackground,
+            //         size: 40,
+            //       ),
+            //     ),
+            //   );
+            // }
+            return Skeletonizer(
+              enabled: snapshot.data == null,
+              child: HomePage(title: title),
+            );
           }),
     );
   }
@@ -75,8 +76,6 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  // late String _scanData;
-
   void handleScan(
       context, title, Future<bool> Function(String) affirmFun) async {
     Navigator.of(context).push(
@@ -85,16 +84,23 @@ class _HomePageState extends State<HomePage> {
           return ScanPage(
               title: title,
               onScan: (scanRes, context) {
-                var deviceSize = MediaQuery.of(context).size;
+                // var deviceSize = MediaQuery.of(context).size;
                 showDialog(
                   context: context,
                   builder: (context) {
                     var affirm = affirmFun(scanRes);
                     return FutureBuilder(
-                        future: affirm,
-                        builder: (context, snap) {
-                          return AffirmBox(isValid: snap.data ?? false);
-                        });
+                      future: affirm,
+                      builder: (context, snap) {
+                        if (snap.data != null) {
+                          return AffirmBox(isValid: snap.data as bool);
+                        } else {
+                          return SpinKitCircle(
+                            size: 10,
+                          );
+                        }
+                      },
+                    );
                   },
                 );
               });
@@ -110,37 +116,42 @@ class _HomePageState extends State<HomePage> {
         leading: Icon(Icons.arrow_back),
         title: Text(widget.title),
       ),
-      body: Center(
-        child: Column(
-          children: [
-            Flexible(flex: 2, fit: FlexFit.tight, child: SizedBox()),
-            Flexible(
-              flex: 2,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  MyButton(
-                    label: "Scan Passes",
-                    todo: () {
-                      handleScan(context, "Scan Passes", utlis.isValidPass);
-                    },
-                  ),
-                  MyButton(
-                    label: "Scan Latecomers",
-                    todo: () {
-                      handleScan(context, "Scan Latecomers", utlis.isValidPass);
-                    },
-                  )
-                ],
-              ),
+      body: Align(
+        alignment: Alignment(0,-0.4),
+        child: ScrollConfiguration(
+          behavior: ScrollBehavior(),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                MyButton(
+                  label: "Scan Passes",
+                  todo: () {
+                    handleScan(
+                      context,
+                      "Scan Passes",
+                      utlis.isValidPass,
+                    );
+                  },
+                ),
+                MyButton(
+                  label: "Scan Latecomers",
+                  todo: () {
+                    handleScan(
+                      context,
+                      "Scan Latecomers",
+                      utlis.isValidPass,
+                    );
+                  },
+                ),
+              ],
             ),
-            Flexible(flex: 4, fit: FlexFit.tight, child: SizedBox()),
-          ],
+          ),
         ),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
-          await utlis.refresh();
+          await utlis.refresh(startup: true);
         },
         child: Icon(Icons.refresh),
         // shape: ,
@@ -148,7 +159,6 @@ class _HomePageState extends State<HomePage> {
     );
   }
 }
-
 
 class AffirmBox extends StatelessWidget {
   const AffirmBox({super.key, required this.isValid});
