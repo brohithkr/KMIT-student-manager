@@ -1,3 +1,4 @@
+from pyexpat import model
 from django.db import models
 from typing import Generic, TypeVar, Union
 from bulk_update_or_create import BulkUpdateOrCreateQuerySet
@@ -58,6 +59,9 @@ class Student(models.Model):
     class Meta:
         db_table = "student"
 
+class Logging(models.Model):
+    time = models.BigIntegerField("Unix time stamp of moment scan was done.")
+    roll_no = models.CharField(max_length=11)
 
 from ninja import Schema
 

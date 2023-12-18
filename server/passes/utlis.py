@@ -34,3 +34,6 @@ def get_local_date(timestamp: int):
     date = datetime.fromtimestamp(timestamp).astimezone(pytz.timezone("Asia/Kolkata"))
     resDate = date.strftime("%d-%m-%Y %H:%M")
     return resDate
+
+def log():
+    pass
