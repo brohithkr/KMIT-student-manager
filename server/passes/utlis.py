@@ -1,5 +1,5 @@
-from datetime import datetime
-from passes.models import LunchTiming
+from datetime import date, datetime
+from passes.models import LunchTiming, Logging
 from typing import Dict
 import pytz
 
@@ -35,5 +35,20 @@ def get_local_date(timestamp: int):
     resDate = date.strftime("%d-%m-%Y %H:%M")
     return resDate
 
-def log():
-    pass
+def log(roll_no: str) -> int | None:
+    # print(datetime.fromtimestamp(datetime.today().timestamp()))
+    last_logged = Logging.objects.filter(
+        roll_no=roll_no
+    ).last()
+    try:
+        Logging.objects.create(
+            time = datetime.today().timestamp(),
+            roll_no = roll_no
+        )
+        if not last_logged:
+            return None
+        else:
+            return last_logged.time
+    except:
+        return -1
+

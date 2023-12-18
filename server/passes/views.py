@@ -21,12 +21,18 @@ api = NinjaAPI()
 def gen_pass(request: HttpRequest, reqPass: ReqPass):
     today = datetime.now()
 
-    already_issued = IssuedPass.objects.filter(
+    valid_passes = IssuedPass.objects.filter(
         roll_no=reqPass.roll_no, valid_till__gt=int(today.timestamp())
     )
 
-    if already_issued.count() > 0:
-        return HttpResponse(f"Warning: {reqPass.roll_no} already owns a pass")
+    
+    passCount = valid_passes.filter(
+            pass_type = reqPass.pass_type
+        ).count()
+
+    
+    if passCount > 0 :
+        return HttpResponse(f"Warning: {reqPass.roll_no} already owns a {reqPass.pass_type} pass")
 
     valid_till = today
     if reqPass.pass_type == "one_time":
@@ -51,7 +57,7 @@ def edit_timings(request: HttpRequest, timings: List[ReqLunchTiming]):
 
     timings_lst = [LunchTiming(year=i + 1, **body[i]) for i in range(0, len(body))]
     for i in timings:
-        LunchTiming.objects.bulk_update_or_create(
+        LunchTiming.objects.bulk_update_or_create( # type: ignore
             timings_lst, ["opening_time", "closing_time"], match_field="year"
         )
     return "success"
@@ -63,7 +69,7 @@ def get_timings(request: HttpRequest):
     return HttpResponse(json.dumps(res_json), content_type="application/json")
 
 
-@api.get("/isvalid")
+@api.get("/isvalid", auth=Auth(), response=Result)
 def is_valid(request: HttpRequest, rollno: str):
     result = Result(success=True, msg="")
     today = datetime.today()
@@ -76,26 +82,31 @@ def is_valid(request: HttpRequest, rollno: str):
         result.msg = "No passes found."
         return result
 
+
+    if resPass.pass_type == "alumni" or resPass.pass_type == "one_time":
+        return result
+
     timings = utlis.get_timings(
         today.astimezone(pytz.timezone("Asia/Kolkata")),
         utlis.roll_to_year(rollno),
     )
 
-    if resPass.pass_type == "alumni":
-        return resPass
-
     if resPass.valid_till < int(today.timestamp()):
         result.success = False
-        result.msg = "No valid passes found."
+        result.msg = "Not valid passes found."
         return result
+
     if not (
         timings["open"]
         < today.astimezone(pytz.timezone("Asia/Kolkata"))
         < timings["close"]
     ):
         result.success = False
-        result.msg = "Not the time"
+        result.msg = "Not the appropriate time"
         return result
+
+    last_logged_time = utlis.log(roll_no=rollno)
+    result.msg = f"Last scanned on {last_logged_time}"
     return result
 
 
@@ -112,7 +123,6 @@ def get_issues_passes(
     if frm and to:
         from_stamp = datetime.strptime(frm, "%d-%m-%Y").timestamp()
         to_stamp = datetime.strptime(to, "%d-%m-%Y").timestamp() + (24 * 60 * 60)
-        # print(pass_qs.values())
         pass_qs = pass_qs.filter(
             issues_date__range=[from_stamp, to_stamp],
         )
