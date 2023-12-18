@@ -96,7 +96,7 @@ DATABASES = {
     if (env.get_value("DB_TYPE", default="SQLITE") == "PG")
     else {
         "ENGINE": "django.db.backends.sqlite3",
-        "NAME": "mydatabase",
+        "NAME": "db.sqlite3",
     }
 }
 
