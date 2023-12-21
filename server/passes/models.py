@@ -87,9 +87,7 @@ class ResStudent(Schema):
 
 
 
-# T = TypeVar('T')
 class Result(Schema):
-    # content: T | None = None
     success: bool
     msg: str
 

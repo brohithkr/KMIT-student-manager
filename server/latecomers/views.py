@@ -1,4 +1,5 @@
 import json
+from urllib import response
 
 from django.http import HttpResponse, HttpRequest
 from ninja import NinjaAPI
@@ -11,16 +12,26 @@ from passes.utlis import get_local_date
 api = NinjaAPI(urls_namespace="latecomers")
 
 
-@api.post("", auth=Auth())
+@api.post("", auth=Auth(), response=Result)
 def rem_latecomers(request: HttpRequest):
     body = json.loads(request.body)
-    print(body)
+    # print(body)
+    result = Result(success=True)
     today = datetime.today()
     if type(body) != list:
-        Latecomers.objects.create(
-            roll_no=body["roll_no"],
-            date=body["date"]
-        )
+        try:
+            Latecomers.objects.create(
+                roll_no=body["roll_no"],
+                date=body["date"]
+            )
+            lateCount = Latecomers.objects.filter(
+                roll_no=body["roll_no"]
+            ).count()
+
+            result.msg=f"Scanned successfully.\nStudent has been late for {lateCount} times."
+        except:
+            result.success = False
+            result.msg = "Not able to scan. Please try again."
     else:
         for i in body:
             print(i)
@@ -28,7 +39,8 @@ def rem_latecomers(request: HttpRequest):
                 roll_no=i["roll_no"],
                 date=i["date"]
             )
-    return "success"
+
+    return result
 
 
 @api.get("")
