@@ -84,6 +84,7 @@ def is_valid(request: HttpRequest, rollno: str):
 
 
     if resPass.pass_type == "alumni" or resPass.pass_type == "one_time":
+        result.msg = f"Roll No. {rollno} has valid pass."
         return result
 
     timings = utlis.get_timings(

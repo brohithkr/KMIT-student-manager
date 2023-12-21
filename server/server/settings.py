@@ -93,7 +93,7 @@ DATABASES = {
         "HOST": env("POSTGRES_HOST"),
         # 'PORT': env("POSTGRES_DATABASE"),
     }
-    if (env.get_value("DB_TYPE", default="SQLITE") == "PG")
+    if (env.get_value("DB_TYPE", default="SQLITE") == "PG") # type: ignore
     else {
         "ENGINE": "django.db.backends.sqlite3",
         "NAME": "db.sqlite3",
