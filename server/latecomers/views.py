@@ -15,7 +15,6 @@ api = NinjaAPI(urls_namespace="latecomers")
 @api.post("", auth=Auth(), response=Result)
 def rem_latecomers(request: HttpRequest):
     body = json.loads(request.body)
-    # print(body)
     result = Result(success=True, msg="")
     today = datetime.today()
     if type(body) != list:

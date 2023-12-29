@@ -29,11 +29,15 @@ SECRET_KEY = env("SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
+
 ALLOWED_HOSTS = [
     "127.0.0.1",
     ".vercel.app",
     "localhost",
     "kmitstudentmanager.pythonanywhere.com",
+    # "0.0.0.0",
+    "*",
+    "192.168.177.167",
 ]
 
 
