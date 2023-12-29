@@ -13,13 +13,6 @@ import './utlis.dart' as utlis;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // if (Platform.isAndroid) {
-  //   final dir = await getApplicationDocumentsDirectory();
-  //   final path = dir.parent.path;
-  //   final file =
-  //       File('$path/databases/com.google.android.datatransport.events');
-  //   await file.writeAsString('Fake');
-  // }
   runApp(const MyApp());
 }
 
@@ -41,6 +34,7 @@ class MyApp extends StatelessWidget {
         colorScheme: darkColorScheme,
         useMaterial3: true,
       ),
+      debugShowCheckedModeBanner: false,
       home: FutureBuilder<bool>(
           initialData: null,
           future: loaded,
@@ -74,19 +68,25 @@ class _HomePageState extends State<HomePage> {
           return ScanPage(
             title: title,
             onScan: (scanRes, context) {
-              var deviceSize = MediaQuery.of(context).size;
-              showDialog(
+              // var deviceSize = MediaQuery.of(context).size;
+              showGeneralDialog(
                 context: context,
-                builder: (context) {
+                pageBuilder: (context, a1, a2) {
                   var affirm = affirmFun(scanRes);
                   return FutureBuilder(
                     future: affirm,
                     builder: (context, snap) {
                       if (snap.data != null) {
-                      return AffirmBox(
-                        isValid: snap.data?["success"],
-                        msg: snap.data?["msg"],
-                      );
+                        return Align(
+                          alignment: Alignment.topCenter,
+                          child: Dialog(
+                            backgroundColor: Colors.transparent,
+                            child: AffirmBox(
+                              isValid: snap.data?["success"],
+                              msg: snap.data?["msg"],
+                            ),
+                          ),
+                        );
                       } else {
                         return SpinKitCircle(
                           size: 20,
@@ -166,17 +166,16 @@ class AffirmBox extends StatelessWidget {
   const AffirmBox({super.key, required this.isValid, required this.msg});
   final bool isValid;
   final String msg;
-  
+
   @override
   Widget build(BuildContext context) {
     var deviceSize = MediaQuery.of(context).size;
     return Container(
-      height: 6*deviceSize.height/8,
-      width: 6*deviceSize.width/8,
+      height: 3.5 * deviceSize.height / 8,
+      width: 6 * deviceSize.width / 8,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.all(Radius.circular(8)),
         color: Theme.of(context).colorScheme.surface,
-        
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
@@ -185,15 +184,33 @@ class AffirmBox extends StatelessWidget {
           AffirmIcon(isValid: isValid),
           Divider(
             color: Theme.of(context).colorScheme.surfaceVariant,
+            indent: 33,
+            endIndent: 33,
           ),
-          Text(
-            msg,
-            style: TextStyle(
-              fontSize: 30,
-              color: Theme.of(context).colorScheme.onSurface,
-              decoration: TextDecoration.none,
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 30),
+            child: Text(
+              msg,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 20,
+                color: Theme.of(context).colorScheme.onSurface,
+                decoration: TextDecoration.none,
+              ),
             ),
           ),
+          SizedBox(
+            height: 45,
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+            },
+            child: Text(
+              "Next",
+              style: TextStyle(fontSize: 20),
+            ),
+          )
         ],
       ),
     );

@@ -1,3 +1,5 @@
+// ignore_for_file: prefer_const_constructors
+
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -60,6 +62,9 @@ class ScanPageState extends State<ScanPage> {
                   widget.onScan(code ?? "None", context);
                   toggleScan();
                 }
+              },
+              notStartedBuilder: (context) {
+                return Container(color: Color(0x00000000), height: deviceSize.height, width: deviceSize.width);
               },
             ),
             const RectangleOverlay(),
