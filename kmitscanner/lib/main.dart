@@ -1,15 +1,12 @@
 // ignore_for_file: prefer_const_constructors
 
-import 'dart:io';
+// import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'color_schemes.g.dart';
-// import 'package:path_provider/path_provider.dart';
-// import 'package:skeletonizer/skeletonizer.dart';
 
-// import './db_handling.dart' as db;
 import './scanner.dart';
 
 import './utlis.dart' as utlis;
@@ -48,16 +45,6 @@ class MyApp extends StatelessWidget {
           initialData: null,
           future: loaded,
           builder: (context, snapshot) {
-            // if (snapshot.data == null) {
-            //   return Scaffold(
-            //     body: Center(
-            //       child: SpinKitCircle(
-            //         color: Theme.of(context).colorScheme.onBackground,
-            //         size: 40,
-            //       ),
-            //     ),
-            //   );
-            // }
             return Skeletonizer(
               enabled: snapshot.data == null,
               child: HomePage(title: title),
@@ -77,33 +64,48 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   void handleScan(
-      context, title, Future<bool> Function(String) affirmFun) async {
+    context,
+    title,
+    Future<Map<String, dynamic>> Function(String) affirmFun,
+  ) async {
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (context) {
           return ScanPage(
-              title: title,
-              onScan: (scanRes, context) {
-                // var deviceSize = MediaQuery.of(context).size;
-                showDialog(
-                  context: context,
-                  builder: (context) {
-                    var affirm = affirmFun(scanRes);
-                    return FutureBuilder(
-                      future: affirm,
-                      builder: (context, snap) {
-                        if (snap.data != null) {
-                          return AffirmBox(isValid: snap.data as bool);
-                        } else {
-                          return SpinKitCircle(
-                            size: 10,
-                          );
-                        }
-                      },
-                    );
-                  },
-                );
-              });
+            title: title,
+            onScan: (scanRes, context) {
+              var deviceSize = MediaQuery.of(context).size;
+              showDialog(
+                context: context,
+                builder: (context) {
+                  var affirm = affirmFun(scanRes);
+                  return FutureBuilder(
+                    future: affirm,
+                    builder: (context, snap) {
+                      if (snap.data != null) {
+                      return AffirmBox(
+                        isValid: snap.data?["success"],
+                        msg: snap.data?["msg"],
+                      );
+                      } else {
+                        return SpinKitCircle(
+                          size: 20,
+                          color: Colors.black,
+                        );
+                      }
+                      // return Skeletonizer(
+                      //   enabled: snap.data != null,
+                      //   child: AffirmBox(
+                      //     isValid: snap.data?["success"],
+                      //     msg: snap.data?["msg"],
+                      //   ),
+                      // );
+                    },
+                  );
+                },
+              );
+            },
+          );
         },
       ),
     );
@@ -117,7 +119,7 @@ class _HomePageState extends State<HomePage> {
         title: Text(widget.title),
       ),
       body: Align(
-        alignment: Alignment(0,-0.4),
+        alignment: Alignment(0, -0.4),
         child: ScrollConfiguration(
           behavior: ScrollBehavior(),
           child: SingleChildScrollView(
@@ -130,7 +132,7 @@ class _HomePageState extends State<HomePage> {
                     handleScan(
                       context,
                       "Scan Passes",
-                      utlis.isValidPass,
+                      utlis.getValidity,
                     );
                   },
                 ),
@@ -140,7 +142,7 @@ class _HomePageState extends State<HomePage> {
                     handleScan(
                       context,
                       "Scan Latecomers",
-                      utlis.isValidPass,
+                      utlis.remLatecomers,
                     );
                   },
                 ),
@@ -161,17 +163,39 @@ class _HomePageState extends State<HomePage> {
 }
 
 class AffirmBox extends StatelessWidget {
-  const AffirmBox({super.key, required this.isValid});
+  const AffirmBox({super.key, required this.isValid, required this.msg});
   final bool isValid;
-
+  final String msg;
+  
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        AffirmIcon(isValid: isValid),
-      ],
+    var deviceSize = MediaQuery.of(context).size;
+    return Container(
+      height: 6*deviceSize.height/8,
+      width: 6*deviceSize.width/8,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.all(Radius.circular(8)),
+        color: Theme.of(context).colorScheme.surface,
+        
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.start,
+        children: [
+          AffirmIcon(isValid: isValid),
+          Divider(
+            color: Theme.of(context).colorScheme.surfaceVariant,
+          ),
+          Text(
+            msg,
+            style: TextStyle(
+              fontSize: 30,
+              color: Theme.of(context).colorScheme.onSurface,
+              decoration: TextDecoration.none,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

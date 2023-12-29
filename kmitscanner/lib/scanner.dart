@@ -1,13 +1,10 @@
+import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 
-import 'package:mobile_scanner/mobile_scanner.dart';
-
-MobileScannerController controller = MobileScannerController(
-  detectionSpeed: DetectionSpeed.unrestricted,
-  torchEnabled: false,
-  facing: CameraFacing.back,
-);
+import 'package:qr_mobile_vision/qr_camera.dart';
 
 class ScanPage extends StatefulWidget {
   const ScanPage({super.key, required this.title, required this.onScan});
@@ -19,19 +16,30 @@ class ScanPage extends StatefulWidget {
   State<ScanPage> createState() => ScanPageState();
 }
 
+class ScanState {
+  var toScan = ValueNotifier(false);
+  void toggleScan() {
+    toScan.value = !toScan.value;
+  }
+}
+
 class ScanPageState extends State<ScanPage> {
-  late bool toScan;
+  late ValueNotifier<bool> toScan;
 
   void toggleScan() {
-    setState(() {
-      toScan = !toScan;
-    });
+    toScan.value = !toScan.value;
   }
 
   @override
   void initState() {
     super.initState();
-    toScan = false;
+    toScan = ValueNotifier(false);
+  }
+
+  @override
+  void dispose() {
+    toScan.dispose();
+    super.dispose();
   }
 
   @override
@@ -44,49 +52,64 @@ class ScanPageState extends State<ScanPage> {
       body: Center(
         child: Stack(
           children: [
-            MobileScanner(
-              controller: controller,
-              onDetect: (capture) {
-                debugPrint(toScan.toString());
-                var barcodes = capture.barcodes;
-                debugPrint(barcodes[0].rawValue);
-                if (toScan) {
-                  // print(barcodes[0].rawValue);
-                  widget.onScan(barcodes[0].rawValue ?? "None", context);
+            QrCamera(
+              qrCodeCallback: (code) {
+                // var barcodes = code;
+                // debugPrint(barcodes);
+                if (toScan.value) {
+                  widget.onScan(code ?? "None", context);
                   toggleScan();
                 }
               },
             ),
-            RectangleOverlay(toDo: toggleScan),
-            Align(
-              alignment: Alignment.bottomCenter,
-              child: ShutterButton(
-                  toDo: () {
-                    if (!toScan) {
-                      toggleScan();
-                    }
-                  },
-                  deviceSize: deviceSize),
-            ),
-            Align(
-              alignment: Alignment.bottomLeft,
-              child: ValueListenableBuilder(
-                valueListenable: controller.torchState,
-                builder: (context, state, child) {
-                  return IconButton(
-                    onPressed: () {
-                      controller.toggleTorch();
-                    },
-                    icon: Icon(
-                      (state.rawValue == 0) ? Icons.flash_on : Icons.flash_off,
+            const RectangleOverlay(),
+            Column(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                Stack(
+                  children: [
+                    Align(
+                      alignment: Alignment.bottomLeft,
+                      child: FlashButton(
+                        deviceSize: deviceSize,
+                        toDo: () {
+                          QrCamera.toggleFlash();
+                        },
+                      ),
                     ),
-                    iconSize: ((deviceSize.width / 6) < 90)
-                        ? deviceSize.width / 6
-                        : 90,
-                    color: Colors.white,
-                  );
-                },
-              ),
+                    Align(
+                      alignment: Alignment.bottomCenter,
+                      child: ValueListenableBuilder(
+                          valueListenable: toScan,
+                          builder: (context, toScan, widget) {
+                            return ThemedButton(
+                              toDo: () {
+                                if (!toScan) {
+                                  toggleScan();
+                                }
+                              },
+                              deviceSize: deviceSize,
+                              icon: (toScan)
+                                  ? SpinKitFadingCircle(
+                                      color: Colors.white,
+                                      size: ((deviceSize.width / 8) < 90)
+                                          ? deviceSize.width / 8
+                                          : 90,
+                                    )
+                                  : Icon(
+                                      Icons.camera_alt_rounded,
+                                      color: Colors.white,
+                                      size: ((deviceSize.width / 8) < 90)
+                                          ? deviceSize.width / 8
+                                          : 90,
+                                    ),
+                            );
+                          }),
+                    ),
+                  ],
+                ),
+                SizedBox(height: deviceSize.height / 8),
+              ],
             ),
           ],
         ),
@@ -96,33 +119,37 @@ class ScanPageState extends State<ScanPage> {
 }
 
 class RectangleOverlay extends StatelessWidget {
-  const RectangleOverlay({super.key, required this.toDo});
-
-  final Function toDo;
+  const RectangleOverlay({super.key});
 
   @override
   Widget build(BuildContext context) {
     var deviceSize = MediaQuery.of(context).size;
-    return Stack(
-      alignment: AlignmentDirectional.bottomCenter,
-      children: [
-        CustomPaint(
-          size: deviceSize,
-          painter: OverlayPainter(
-            holeSize: Size(
-              deviceSize.width * 6 / 8,
-              deviceSize.width * 6 / 8,
-              // deviceSize.height * 2.5 / 8,
+    var holeSize = Size(
+      deviceSize.width * 6 / 8,
+      deviceSize.width * 6 / 8,
+    );
+    return ClipPath(
+      clipper: OverlayClipper(holeSize: holeSize),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
+        child: Stack(
+          alignment: AlignmentDirectional.bottomCenter,
+          children: [
+            CustomPaint(
+              size: deviceSize,
+              painter: OverlayPainter(
+                holeSize: holeSize,
+              ),
             ),
-          ),
+          ],
         ),
-      ],
+      ),
     );
   }
 }
 
-class ShutterButton extends StatelessWidget {
-  const ShutterButton({
+class FlashButton extends StatelessWidget {
+  const FlashButton({
     super.key,
     required this.toDo,
     required this.deviceSize,
@@ -133,15 +160,43 @@ class ShutterButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return IconButton(
+    return ThemedButton(
+      icon: Icon(
+        Icons.flash_on,
+        color: Colors.white,
+        size: ((deviceSize.width / 8) < 90) ? deviceSize.width / 8 : 90,
+      ),
+      toDo: toDo,
+      deviceSize: deviceSize,
+    );
+  }
+}
+
+class ThemedButton extends StatelessWidget {
+  const ThemedButton({
+    super.key,
+    required this.icon,
+    required this.toDo,
+    required this.deviceSize,
+  });
+  final Widget icon;
+  final Function toDo;
+  final Size deviceSize;
+
+  @override
+  Widget build(BuildContext context) {
+    return RawMaterialButton(
       onPressed: () {
         HapticFeedback.vibrate();
         toDo();
       },
-      icon: Icon(
-        Icons.camera,
-        color: Colors.white,
-        size: ((deviceSize.width / 6) < 90) ? deviceSize.width / 6 : 90,
+      shape: const CircleBorder(),
+      fillColor: const Color.fromARGB(100, 0, 0, 0),
+      splashColor: const Color.fromARGB(255, 0, 0, 0),
+      focusColor: const Color.fromARGB(255, 0, 0, 0),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: icon,
       ),
     );
   }
@@ -153,7 +208,7 @@ class OverlayPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final paint = Paint()..color = Color.fromARGB(121, 0, 0, 0);
+    final paint = Paint()..color = const Color.fromARGB(121, 0, 0, 0);
 
     canvas.drawPath(
       Path.combine(
@@ -168,7 +223,7 @@ class OverlayPainter extends CustomPainter {
                 holeSize.width,
                 holeSize.height,
               ),
-              Radius.circular(10),
+              const Radius.circular(10),
             ),
           ),
       ),
@@ -180,4 +235,33 @@ class OverlayPainter extends CustomPainter {
   bool shouldRepaint(CustomPainter oldDelegate) {
     return false;
   }
+}
+
+class OverlayClipper extends CustomClipper<Path> {
+  OverlayClipper({required this.holeSize});
+
+  Size holeSize;
+
+  @override
+  Path getClip(Size size) {
+    return Path.combine(
+      PathOperation.difference,
+      Path()..addRect(Rect.fromLTWH(0, 0, size.width, size.height)),
+      Path()
+        ..addRRect(
+          RRect.fromRectAndRadius(
+            Rect.fromLTWH(
+              size.width / 8,
+              size.height / 8,
+              holeSize.width,
+              holeSize.height,
+            ),
+            const Radius.circular(10),
+          ),
+        ),
+    );
+  }
+
+  @override
+  bool shouldReclip(covariant CustomClipper oldClipper) => false;
 }

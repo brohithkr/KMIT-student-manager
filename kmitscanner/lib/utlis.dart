@@ -31,7 +31,21 @@ dynamic getDecryptedData(String endata) {
   return res;
 }
 
-Future<bool> isValidPass(rollno) async {
+Future<Map<String, dynamic>> getValidity(rollno) async {
+  try{
+    var res = await http.get(Uri.parse("$hostUrl/isvalid?rollno=$rollno"),
+        headers: Map.from({"authorization": "bearer $auth_token"}));
+      return jsonDecode(res.body);
+  }
+  catch(e) {
+    return Map.from({
+      "success": false,
+      "msg": "Please connetc to internet."
+    });
+  }
+}
+
+Future<bool> isValidPass_old(rollno) async {
   var passFuture = ValidPass.by(rollno: rollno);
   // var res = await _isValidPass(passFuture);
   var pass = (await passFuture)[0];
@@ -69,9 +83,20 @@ Future<bool> isValidPass(rollno) async {
   return true;
 }
 
-// Future<bool> _isValidPass(Future<List<Map<String, Object?>>> passFuture) async {
-
-// }
+Future<Map<String, dynamic>> remLatecomers(String rollno) async {
+  try{
+    var res = await http.post(Uri.parse("$hostUrl/latecomers"),
+        headers: Map.from({"authorization": "bearer $auth_token"}));
+        
+      return jsonDecode(res.body);
+  }
+  catch(e) {
+    return Map.from({
+      "success": false,
+      "msg": "Please connect to internet."
+    });
+  }
+}
 
 Future<bool> refresh({bool startup = false}) async {
   if (startup) {
@@ -82,7 +107,7 @@ Future<bool> refresh({bool startup = false}) async {
   try {
     await refreshTimings();
     await ValidPass.loadAll();
-    print(await isValidPass("22BD1A0505"));
+    print(await getValidity("22BD1A0505"));
     return true;
   } catch (e) {
     return false;
@@ -98,21 +123,22 @@ Future<bool> refresh({bool startup = false}) async {
 // }
 
 void main() async {
-  String now = (DateTime.now().millisecondsSinceEpoch.toString());
-  var res = await http.post(
-    Uri.parse("$hostUrl/latecomers"),
-    headers: Map<String, String>.from(
-      {
-        "authorization": "bearer $auth_token",
-      },
-    ),
-    body: jsonEncode(
-      [
-        {
-          "roll_no": "22BD1A0505",
-          "date": DateTime.now().millisecondsSinceEpoch.toString(),
-        }
-      ],
-    ),
-  );
+  print(await getValidity("22BD1A0505"));
+  // String now = (DateTime.now().millisecondsSinceEpoch.toString());
+  // var res = await http.post(
+  //   Uri.parse("$hostUrl/latecomers"),
+  //   headers: Map<String, String>.from(
+  //     {
+  //       "authorization": "bearer $auth_token",
+  //     },
+  //   ),
+  //   body: jsonEncode(
+  //     [
+  //       {
+  //         "roll_no": "22BD1A0505",
+  //         "date": DateTime.now().millisecondsSinceEpoch.toString(),
+  //       }
+  //     ],
+  //   ),
+  // );
 }
