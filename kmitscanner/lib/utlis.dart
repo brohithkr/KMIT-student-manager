@@ -1,7 +1,7 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
-import 'package:flutter/services.dart';
-import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
+// import 'package:flutter/services.dart';
 
 import 'secrets.dart';
 
@@ -9,21 +9,6 @@ import './db_handling.dart';
 // import 'ffi.dart';
 
 // var hosturl = "http://localhost:3000";
-
-scanQR() async {
-  String scanRes;
-  try {
-    scanRes = await FlutterBarcodeScanner.scanBarcode(
-      '#ff6666',
-      'Cancel',
-      false,
-      ScanMode.BARCODE,
-    );
-  } on PlatformException {
-    scanRes = 'Failed to get platform version.';
-  }
-  return scanRes;
-}
 
 int rollToYear(String rollno) {
   var today = DateTime.now();
@@ -47,16 +32,30 @@ dynamic getDecryptedData(String endata) {
   return res;
 }
 
-Future<bool> isValidPass(dynamic pass) async {
-  // print(timings[]);
-  int validTill = (pass['valid_till']);
+Future<Map<String, dynamic>> getValidity(rollno) async {
+  try {
+    var res = await http.get(Uri.parse("$hostUrl/isvalid?rollno=$rollno"),
+        headers: Map.from({"authorization": "bearer $auth_token"}));
+    return jsonDecode(res.body);
+  } catch (e) {
+    return Map.from({"success": false, "msg": "Please connetc to internet."});
+  }
+}
+
+Future<bool> isValidPass_old(rollno) async {
+  var passFuture = ValidPass.by(rollno: rollno);
+  // var res = await _isValidPass(passFuture);
+  var pass = (await passFuture)[0];
+
+  int validTill = (pass['valid_till'] as int);
   var now = DateTime.now();
-  if (now.millisecondsSinceEpoch > validTill) {
+  if (now.millisecondsSinceEpoch > validTill * 1000) {
     return false;
   }
 
-  int year = rollToYear(pass['rno']);
-  if (year >= 4) {
+  int year = rollToYear(pass['rollno'] as String);
+  if (pass['pass_type'] == 'alumni' || pass['pass_type'] == 'single_use') {
+    print("Is True");
     return true;
   }
   var timing = await getTimings()[year - 1];
@@ -81,22 +80,62 @@ Future<bool> isValidPass(dynamic pass) async {
   return true;
 }
 
+Future<Map<String, dynamic>> remLatecomers(String rollno) async {
+  try {
+    var res = await http.post(
+      Uri.parse("$hostUrl/latecomers/"),
+      headers: Map.from({"authorization": "bearer $auth_token"}),
+      body: jsonEncode(<String,String>{"roll_no":rollno,"date":DateTime.now().microsecondsSinceEpoch.toString()})
+    );
+    var x = (res.body);
+    return jsonDecode(res.body);
+  } catch (e) {
+    debugPrint(e.toString());
+    return Map.from({"success": false, "msg": "Please connect to internet."});
+  }
+}
+
+Future<bool> refresh({bool startup = false}) async {
+  if (startup) {
+    if (await isDbPresent()) {
+      return true;
+    }
+  }
+  try {
+    await refreshTimings();
+    await ValidPass.loadAll();
+    print(await getValidity("22BD1A0505"));
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+// Future<bool> refreshStartup() async {
+//   if (await isDbPresent()) {
+//     return refresh();
+//   } else {
+//     return
+//   }
+// }
+
 void main() async {
-  String now = (DateTime.now().millisecondsSinceEpoch.toString());
-  var res = await http.post(
-    Uri.parse("$hostUrl/latecomers"),
-    headers: Map<String, String>.from(
-      {
-        "authorization": "bearer $auth_token",
-      },
-    ),
-    body: jsonEncode(
-      [
-        {
-          "roll_no": "22BD1A0505",
-          "date": DateTime.now().millisecondsSinceEpoch.toString(),
-        }
-      ],
-    ),
-  );
+  print(await getValidity("22BD1A0505"));
+  // String now = (DateTime.now().millisecondsSinceEpoch.toString());
+  // var res = await http.post(
+  //   Uri.parse("$hostUrl/latecomers"),
+  //   headers: Map<String, String>.from(
+  //     {
+  //       "authorization": "bearer $auth_token",
+  //     },
+  //   ),
+  //   body: jsonEncode(
+  //     [
+  //       {
+  //         "roll_no": "22BD1A0505",
+  //         "date": DateTime.now().millisecondsSinceEpoch.toString(),
+  //       }
+  //     ],
+  //   ),
+  // );
 }

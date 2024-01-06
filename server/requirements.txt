@@ -6,6 +6,7 @@ django-bulk-update-or-create==0.3.0
 django-environ==0.11.2
 django-ninja==0.22.2
 idna==3.4
+packaging==23.2
 psycopg2-binary==2.9.9
 pydantic==1.10.13
 python-dateutil==2.8.2

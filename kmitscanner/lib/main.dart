@@ -1,12 +1,18 @@
-// ignore_for_file: prefer_const_constructors, prefer_const_literals_to_create_immutables
+// ignore_for_file: prefer_const_constructors
+
+// import 'dart:io';
 
 import 'package:flutter/material.dart';
-import './db_handling.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:skeletonizer/skeletonizer.dart';
+import 'color_schemes.g.dart';
+
+import './scanner.dart';
 
 import './utlis.dart' as utlis;
 
 void main() async {
-  // await ValidPass.loadAll();
+  WidgetsFlutterBinding.ensureInitialized();
   runApp(const MyApp());
 }
 
@@ -15,16 +21,29 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    String title = "Kmit Scanner";
+    String title = "Garuda Scanner";
+    Future<bool> loaded = utlis.refresh();
 
     return MaterialApp(
       title: title,
       theme: ThemeData(
-        colorScheme:
-            ColorScheme.fromSeed(seedColor: Color.fromARGB(255, 58, 106, 183)),
+        colorScheme: lightColorScheme,
         useMaterial3: true,
       ),
-      home: HomePage(title: title),
+      darkTheme: ThemeData(
+        colorScheme: darkColorScheme,
+        useMaterial3: true,
+      ),
+      debugShowCheckedModeBanner: false,
+      home: FutureBuilder<bool>(
+          initialData: null,
+          future: loaded,
+          builder: (context, snapshot) {
+            return Skeletonizer(
+              enabled: snapshot.data == null,
+              child: HomePage(title: title),
+            );
+          }),
     );
   }
 }
@@ -38,6 +57,60 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  void handleScan(
+    context,
+    title,
+    Future<Map<String, dynamic>> Function(String) affirmFun,
+  ) async {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) {
+          return ScanPage(
+            title: title,
+            onScan: (scanRes, context) {
+              // var deviceSize = MediaQuery.of(context).size;
+              showGeneralDialog(
+                context: context,
+                pageBuilder: (context, a1, a2) {
+                  var affirm = affirmFun(scanRes);
+                  return FutureBuilder(
+                    future: affirm,
+                    builder: (context, snap) {
+                      if (snap.data != null) {
+                        return Align(
+                          alignment: Alignment.topCenter,
+                          child: Dialog(
+                            backgroundColor: Colors.transparent,
+                            child: AffirmBox(
+                              isValid: snap.data?["success"],
+                              msg: snap.data?["msg"],
+                            ),
+                          ),
+                        );
+                      } else {
+                        return SpinKitCircle(
+                          size: 20,
+                          color: Colors.black,
+                        );
+                      }
+                      // return Skeletonizer(
+                      //   enabled: snap.data != null,
+                      //   child: AffirmBox(
+                      //     isValid: snap.data?["success"],
+                      //     msg: snap.data?["msg"],
+                      //   ),
+                      // );
+                    },
+                  );
+                },
+              );
+            },
+          );
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -45,86 +118,126 @@ class _HomePageState extends State<HomePage> {
         leading: Icon(Icons.arrow_back),
         title: Text(widget.title),
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            MyButton(
-              label: "Scan Passes",
-              todo: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) {
-                      String initData = utlis.scanQR();
-                      return ScanPage(
-                          toScan: "Scan Passes", initData: initData);
-                    },
-                  ),
-                );
-              },
+      body: Align(
+        alignment: Alignment(0, -0.4),
+        child: ScrollConfiguration(
+          behavior: ScrollBehavior(),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                MyButton(
+                  label: "Scan Passes",
+                  todo: () {
+                    handleScan(
+                      context,
+                      "Scan Passes",
+                      utlis.getValidity,
+                    );
+                  },
+                ),
+                MyButton(
+                  label: "Scan Latecomers",
+                  todo: () {
+                    handleScan(
+                      context,
+                      "Scan Latecomers",
+                      utlis.remLatecomers,
+                    );
+                  },
+                ),
+              ],
             ),
-            MyButton(
-              label: "Scan Latecomers",
-              todo: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(
-                    builder: (context) {
-                      String initData = utlis.scanQR();
-                      return ScanPage(
-                          toScan: "Scan Latecomers", initData: initData);
-                    },
-                  ),
-                );
-              },
-            )
-          ],
+          ),
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {},
+        onPressed: () async {
+          await utlis.refresh(startup: true);
+        },
+        child: Icon(Icons.refresh),
+        // shape: ,
       ),
     );
   }
 }
 
-class ScanPage extends StatefulWidget {
-  const ScanPage({super.key, required this.toScan, required this.initData});
-  final String toScan;
-  final String initData;
-
-  @override
-  State<ScanPage> createState() => _ScanPageState();
-}
-
-class _ScanPageState extends State<ScanPage> {
-  late String _scanData;
-
-  void handleScan() async {
-    String scanData = await utlis.scanQR();
-    setState(() {
-      _scanData = scanData;
-    });
-  }
-
-  @override
-  void initState() {
-    _scanData = widget.initData;
-  }
+class AffirmBox extends StatelessWidget {
+  const AffirmBox({super.key, required this.isValid, required this.msg});
+  final bool isValid;
+  final String msg;
 
   @override
   Widget build(BuildContext context) {
-    if (_scanData == "-1" || _scanData == "--") {
-      return Center(
-        child: MyButton(
-            label: widget.toScan,
-            todo: () {
-              handleScan();
-            }),
-      );
-    } else {
-      // if (widget.toScan == "Scan Passes") {}
-      return Placeholder();
-    }
+    var deviceSize = MediaQuery.of(context).size;
+    return Container(
+      height: 3.5 * deviceSize.height / 8,
+      width: 6 * deviceSize.width / 8,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.all(Radius.circular(8)),
+        color: Theme.of(context).colorScheme.surface,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        mainAxisAlignment: MainAxisAlignment.start,
+        children: [
+          AffirmIcon(isValid: isValid),
+          Divider(
+            color: Theme.of(context).colorScheme.surfaceVariant,
+            indent: 33,
+            endIndent: 33,
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 30),
+            child: Text(
+              msg,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 20,
+                color: Theme.of(context).colorScheme.onSurface,
+                decoration: TextDecoration.none,
+              ),
+            ),
+          ),
+          SizedBox(
+            height: 45,
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+            },
+            child: Text(
+              "Next",
+              style: TextStyle(fontSize: 20),
+            ),
+          )
+        ],
+      ),
+    );
+  }
+}
+
+class AffirmIcon extends StatelessWidget {
+  const AffirmIcon({required this.isValid, super.key});
+  final bool isValid;
+
+  final Color green = const Color.fromARGB(255, 7, 141, 63);
+  final Color red = const Color.fromARGB(255, 186, 49, 49);
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: EdgeInsetsDirectional.symmetric(vertical: 25),
+      decoration: BoxDecoration(
+        color: ((isValid) ? green : red),
+        shape: BoxShape.circle,
+      ),
+      child: Icon(
+        (isValid) ? Icons.done_rounded : Icons.close_rounded,
+        color: Colors.white,
+        size: 80,
+      ),
+    );
   }
 }
 
@@ -136,7 +249,7 @@ class MyButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.all(8.0),
+      padding: const EdgeInsets.all(15),
       child: ElevatedButton(
         onPressed: todo,
         child: Padding(
@@ -144,59 +257,11 @@ class MyButton extends StatelessWidget {
           child: Text(
             label,
             style: TextStyle(
-              fontSize: 18,
+              fontSize: 25,
               // fontWeight: FontWeight.bold,
             ),
           ),
         ),
-      ),
-    );
-  }
-}
-
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  final String title;
-
-  @override
-  State<MyHomePage> createState() => _MyHomePageState();
-}
-
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
-
-  void _incrementCounter() {
-    setState(() {
-      _counter++;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(widget.title),
-      ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
       ),
     );
   }

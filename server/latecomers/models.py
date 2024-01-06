@@ -18,6 +18,9 @@ class Latecomers(models.Model):
 from ninja import Schema
 from typing import List
 
+class Result(Schema):
+    success: bool
+    msg: str
 
 class ReqLatecomers(Schema):
     roll_no: str

@@ -1,4 +1,5 @@
 import json
+from urllib import response
 
 from django.http import HttpResponse, HttpRequest
 from ninja import NinjaAPI
@@ -11,41 +12,38 @@ from passes.utlis import get_local_date
 api = NinjaAPI(urls_namespace="latecomers")
 
 
-@api.post("", auth=Auth())
+@api.post("", auth=Auth(), response=Result)
 def rem_latecomers(request: HttpRequest):
     body = json.loads(request.body)
-    print(body)
+    result = Result(success=True, msg="")
     today = datetime.today()
     if type(body) != list:
-        Latecomers.objects.create(
-            roll_no=body["roll_no"],
-            date=body["date"]
-        )
+        try:
+            lateCount = Latecomers.objects.filter(roll_no=body["roll_no"]).count()
+            Latecomers.objects.create(roll_no=body["roll_no"], date=body["date"])
+            result.msg = f"Scanned successfully.\nStudent has been late for {lateCount} times earlier."
+        except:
+            result.success = False
+            result.msg = "Not able to scan. Please try again."
     else:
         for i in body:
             print(i)
-            Latecomers.objects.create(
-                roll_no=i["roll_no"],
-                date=i["date"]
-            )
-    return "success"
+            Latecomers.objects.create(roll_no=i["roll_no"], date=i["date"])
+
+    return result
 
 
 @api.get("")
-def latecomers(request, ret_type = "json", frm=None, to=None, rollno=None):
+def latecomers(request, ret_type="json", frm=None, to=None, rollno=None):
     latecomers_qs = Latecomers.objects.all()
 
     if frm and to:
         from_stamp = datetime.strptime(frm, "%d-%m-%Y").timestamp()
         to_stamp = datetime.strptime(to, "%d-%m-%Y").timestamp()
-        latecomers_qs = latecomers_qs.filter(
-            date__range=[from_stamp, to_stamp]
-        )
+        latecomers_qs = latecomers_qs.filter(date__range=[from_stamp, to_stamp])
 
     if rollno:
-        latecomers_qs = latecomers_qs.filter(
-            roll_no=rollno
-        )
+        latecomers_qs = latecomers_qs.filter(roll_no=rollno)
 
     if latecomers_qs.count() == 0:
         return HttpResponse("No latecomers found.")
@@ -57,11 +55,18 @@ def latecomers(request, ret_type = "json", frm=None, to=None, rollno=None):
         res = ""
         for i in latecomers_qs:
             if res == "":
-                res += (str(list(i.json().keys())).strip("[]")
-                        .replace("'", "") + "\n")
-            res += (str(list(i.json().values())).strip("[]")
-                    .replace("'", "")
-                    .replace(str(i.date), get_local_date(i.date)) + "\n")
-        return HttpResponse(res, content_type="text/csv", headers={
-            "Content-Disposition": f"attachment; filename=latecomers_{int(datetime.now().timestamp())}.csv"
-        })
+                res += str(list(i.json().keys())).strip("[]").replace("'", "") + "\n"
+            res += (
+                str(list(i.json().values()))
+                .strip("[]")
+                .replace("'", "")
+                .replace(str(i.date), get_local_date(i.date))
+                + "\n"
+            )
+        return HttpResponse(
+            res,
+            content_type="text/csv",
+            headers={
+                "Content-Disposition": f"attachment; filename=latecomers_{int(datetime.now().timestamp())}.csv"
+            },
+        )
