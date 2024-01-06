@@ -86,7 +86,6 @@ class GetHistoryDialog(QDialog):
         self.parent().success("CSV Download started in browser.")
         self.close()
 
-
     def closeEvent(self, a0: QCloseEvent) -> None:
         if self.parent():
             self.parent().setEnabled(True)
