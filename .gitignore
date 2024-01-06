@@ -10,3 +10,4 @@ server/.vscode/settings.json
 backData**
 server/testUpload.py
 server/students.json
+srvrcfg.py
