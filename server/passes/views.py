@@ -25,14 +25,12 @@ def gen_pass(request: HttpRequest, reqPass: ReqPass):
         roll_no=reqPass.roll_no, valid_till__gt=int(today.timestamp())
     )
 
-    
-    passCount = valid_passes.filter(
-            pass_type = reqPass.pass_type
-        ).count()
+    passCount = valid_passes.filter(pass_type=reqPass.pass_type).count()
 
-    
-    if passCount > 0 :
-        return HttpResponse(f"Warning: {reqPass.roll_no} already owns a {reqPass.pass_type} pass")
+    if passCount > 0:
+        return HttpResponse(
+            f"Warning: {reqPass.roll_no} already owns a {reqPass.pass_type} pass"
+        )
 
     valid_till = today
     if reqPass.pass_type == "one_time":
@@ -57,10 +55,11 @@ def edit_timings(request: HttpRequest, timings: List[ReqLunchTiming]):
 
     timings_lst = [LunchTiming(year=i + 1, **body[i]) for i in range(0, len(body))]
     for i in timings:
-        LunchTiming.objects.bulk_update_or_create( # type: ignore
+        LunchTiming.objects.bulk_update_or_create(  # type: ignore
             timings_lst, ["opening_time", "closing_time"], match_field="year"
         )
     return "success"
+
 
 @api.get("/get_timings")
 def get_timings(request: HttpRequest):
@@ -81,7 +80,6 @@ def is_valid(request: HttpRequest, rollno: str):
         result.success = False
         result.msg = "No passes found."
         return result
-
 
     if resPass.pass_type == "alumni" or resPass.pass_type == "one_time":
         result.msg = f"Roll No. {rollno} has valid pass."
@@ -169,21 +167,20 @@ def get_valid_passes(request: HttpRequest):
     return HttpResponse(json.dumps(pass_json), content_type="application/json")
 
 
-@api.get("/get_student_data", auth=Auth(), response={200:ResStudent, 404: str})
+@api.get("/get_student_data", auth=Auth(), response={200: ResStudent, 404: str})
 def get_student_data(request: HttpRequest, rollno: str):
     res = Student.objects.filter(rollno=rollno).first()
-    if res==None:
-
-        return 404,"No rollno found"
+    if res == None:
+        return 404, "No rollno found"
     picture_bytes = None
     try:
         image_res = requests.get(str(res.picture), timeout=3)
         picture_bytes = image_res.content
         picture_b64 = base64.b64encode(picture_bytes)
         res.picture = picture_b64.decode()
-        if(image_res.status_code == 403):
+        if image_res.status_code == 403:
             res.picture = None
     except:
         res.picture = None
 
-    return 200,res
+    return 200, res

@@ -4,6 +4,7 @@ import environ
 env = environ.Env()
 environ.Env.read_env()
 
+
 class Auth(HttpBearer):
     def authenticate(self, request, token):
         if token == env("AUTH_TOKEN"):
