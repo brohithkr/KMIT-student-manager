@@ -1,6 +1,5 @@
-from pyexpat import model
 from django.db import models
-from typing import Generic, TypeVar, Union
+from typing import Union
 from bulk_update_or_create import BulkUpdateOrCreateQuerySet
 import json
 
@@ -59,11 +58,13 @@ class Student(models.Model):
     class Meta:
         db_table = "student"
 
+
 class Logging(models.Model):
     time = models.BigIntegerField("Unix time stamp of moment scan was done.")
     roll_no = models.CharField(max_length=11)
 
-from ninja import Schema
+
+from ninja import Schema  # noqa: E402
 
 
 class ReqPass(Schema):
@@ -75,16 +76,15 @@ class ReqLunchTiming(Schema):
     opening_time: str
     closing_time: str
 
+
 class ResStudent(Schema):
-    rollno : str
-    kmitrollno : str
-    name : str
-    year : str
+    rollno: str
+    kmitrollno: str
+    name: str
+    year: str
     dept: str
     section: str
-    picture : Union[str , None]
-
-
+    picture: Union[str, None]
 
 
 class Result(Schema):
@@ -100,19 +100,19 @@ def init_students():
     with open("./students.json") as file:
         data = list(
             map(
-                lambda i: Student(**{
-                    "rollno": i["hallticketno"],
-                    "name": i["firstname"][:-5],
-                    "year":i["currentyear"],
-                    "dept": i["dept"],
-                    "section": i["section"],
-                    "picture": i["picture"],
-                }),
-                json.loads(file.read()).values(),
+                lambda i: Student(
+                    **{
+                        "rollno": i["hallticketno"],
+                        "name": i["firstname"][:-5],
+                        "year": i["currentyear"],
+                        "dept": i["dept"],
+                        "section": i["section"],
+                        "picture": i["picture"],
+                    }
+                ),
+                json.loads(file.read()),
             )
         )
     print(())
-    Student.objects.bulk_create(
-        data
-    )
+    Student.objects.bulk_create(data)
     # Student.objects.bulk_create()
