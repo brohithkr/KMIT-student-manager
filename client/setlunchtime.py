@@ -22,7 +22,7 @@ class LunchTimeDialog(QDialog):
     invalid = pyqtSignal()
 
     def __init__(self, parent=None):
-        super().__init__(parent=parent)
+        super().__init__(parent)
         self.setWindowTitle("Set Lunch Time")
 
         if parent:
@@ -118,6 +118,7 @@ class LunchTimeDialog(QDialog):
         else:
             self.parent().status.setText("Unexpected Error.")
             self.parent().error(f"Unexpected Error. {res.content.decode()}")
+            self.reject()
 
     def reject(self):
         if self.parent():
@@ -126,5 +127,6 @@ class LunchTimeDialog(QDialog):
 
     def closeEvent(self, a0: QCloseEvent) -> None:
         if self.parent():
+            self.setAttribute(Qt.WA_DeleteOnClose)
             self.parent().setEnabled(True)
         return super().closeEvent(a0)

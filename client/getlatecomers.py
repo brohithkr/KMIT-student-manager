@@ -21,7 +21,7 @@ DATE = date.today()
 
 class GetLatecomersDialog(QDialog):
     def __init__(self, parent=None):
-        super().__init__(parent=parent)
+        super().__init__(parent)
         self.setWindowTitle("Latecomers")
 
         if parent:
@@ -108,5 +108,6 @@ class GetLatecomersDialog(QDialog):
 
     def closeEvent(self, a0: QCloseEvent) -> None:
         if self.parent():
+            self.setAttribute(Qt.WA_DeleteOnClose)
             self.parent().setEnabled(True)
         return super().closeEvent(a0)

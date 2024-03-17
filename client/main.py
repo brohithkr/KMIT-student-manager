@@ -30,6 +30,7 @@ import sys
 from setlunchtime import *
 from gethistory import *
 from getlatecomers import *
+from passinfo import *
 from srvrcfg import SERVERURL, headers, TIMEOUT
 
 BASE_DIR = None
@@ -56,11 +57,11 @@ class MainWin(QMainWindow):
         self.invalidRno: QLabel
         self.PassType: QComboBox
         self.Tools: QToolButton
-        self.GenPassBtn: QPushButton
+        self.PassActionButton: QPushButton
         self.Image: QGraphicsView
 
-        ui_file_path = joinpath(DATA_DIR, "design.ui")
-        loadUi(ui_file_path, self)
+        UIPath = joinpath(DATA_DIR, "design.ui")
+        loadUi(UIPath, self)
 
         self.status = QLabel()
         self.status.setAlignment(Qt.AlignmentFlag.AlignRight)
@@ -77,9 +78,9 @@ class MainWin(QMainWindow):
         # self.rno.returnPressed.connect(lambda: self.PassType.setFocus())
 
         self.PassType.currentIndexChanged.connect(
-            lambda idx: self.GenPassBtn.setEnabled(idx > -1)
+            lambda idx: self.PassActionButton.setEnabled(idx > -1)
         )
-        self.GenPassBtn.pressed.connect(self.generatePass)
+        self.PassActionButton.pressed.connect(self.handlePassAction)
 
         self.setupOptions()
         self.setupUI()
@@ -88,7 +89,7 @@ class MainWin(QMainWindow):
         if not fullmatch("\d{2}BD[15]A\d{2}[A-HJ-NP-RT-Z0-9]{2}", rno):
             self.PassType.setCurrentIndex(-1)
             self.PassType.setDisabled(True)
-            self.GenPassBtn.setDisabled(True)
+            self.PassActionButton.setDisabled(True)
             self._SetImg(*anonymous_img)
             self.details.setText("## Enter data")
             self.details.setStyleSheet("color: #ccc")
@@ -153,6 +154,11 @@ class MainWin(QMainWindow):
         self.details.setAlignment(
             Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
         )
+
+        if student_details["activePass"] != None:
+            self.PassType.setDisabled(True)
+            self.activePass = {"roll_no": self.rno.text().upper() **student_details["activePass"]}
+            self.PassActionButton.setText("Pass Info")
 
         if student_details["picture"] in {
             None,
@@ -244,8 +250,23 @@ class MainWin(QMainWindow):
         self.Image.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
     @pyqtSlot()
-    def generatePass(self):
+    def handlePassAction(self):
         self.status.setText("Processing...")
+        if self.activePass:
+            pass
+        else:
+            self.generatePass()
+
+    @pyqtSlot()
+    def showPassInfo(self):
+        dlg = PassInfoDialog(self)
+        dlg.show()
+        self.status.setText("Waiting...")
+        self.activePass = None
+        self.PassActionButton.setText("Generate")
+
+    @pyqtSlot()
+    def generatePass(self):
         passtype = self.PassType.currentIndex()
         try:
             response = urlpost(
@@ -259,7 +280,11 @@ class MainWin(QMainWindow):
                         else (
                             "daily"
                             if passtype == 1
-                            else "alumni" if passtype == 2 else "namaaz"
+                            else ( 
+                                "alumni" 
+                                if passtype == 2 
+                                else "namaaz"
+                            )
                         )
                     ),
                 },
@@ -287,7 +312,7 @@ class MainWin(QMainWindow):
             self.status.setText("Done")
         else:
             self.error(
-                f"Unexpected server-side error:\nResponse code: {response.status_code}\n{response.content.decode()}"
+                f"Unexpected error:\nResponse code: {response.status_code}\n{response.content.decode()}"
             )
 
     @pyqtSlot(str)

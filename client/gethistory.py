@@ -9,7 +9,7 @@ from PyQt5.QtWidgets import (
     QFormLayout,
 )
 from PyQt5.QtGui import QCloseEvent
-from PyQt5.QtCore import pyqtSignal, Qt
+from PyQt5.QtCore import Qt
 
 from datetime import date
 from re import fullmatch
@@ -20,9 +20,9 @@ DATE = date.today()
 
 class GetHistoryDialog(QDialog):
     def __init__(self, parent, type):
-        super().__init__(parent=parent)
+        super().__init__(parent)
         self.setWindowTitle(f"{type} History")
-    
+
         parent.setDisabled(True)
         self.setEnabled(True)
 
@@ -112,5 +112,6 @@ class GetHistoryDialog(QDialog):
 
     def closeEvent(self, a0: QCloseEvent) -> None:
         if self.parent():
+            self.setAttribute(Qt.WA_DeleteOnClose)
             self.parent().setEnabled(True)
         return super().closeEvent(a0)
