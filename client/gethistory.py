@@ -19,13 +19,14 @@ from srvrcfg import SERVERURL
 DATE = date.today()
 
 class GetHistoryDialog(QDialog):
-    def __init__(self, parent=None):
+    def __init__(self, parent, type):
         super().__init__(parent=parent)
-        self.setWindowTitle("History")
+        self.setWindowTitle(f"{type} History")
+    
+        parent.setDisabled(True)
+        self.setEnabled(True)
 
-        if parent:
-            parent.setDisabled(True)
-            self.setEnabled(True)
+        self.type = type
 
         self.setWindowFlag(Qt.WindowContextHelpButtonHint, False)
         buttonBox = QDialogButtonBox(QDialogButtonBox.Ok, self)
@@ -88,7 +89,11 @@ class GetHistoryDialog(QDialog):
 
         from webbrowser import open as open_in_browser
 
-        baseurl = f"{SERVERURL}/get_issued_passes"
+        if self.type == "Issue":
+            baseurl = f"{SERVERURL}/get_issued_passes"
+        elif self.type == "Scan":
+            baseurl = f"{SERVERURL}/get_scan_history"
+
         args = "ret_type=csv"
         if rno:
             args += f"&based_on=rollno&roll_no={rno}"

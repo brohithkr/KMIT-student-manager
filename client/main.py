@@ -70,9 +70,7 @@ class MainWin(QMainWindow):
         self.statusBar().addWidget(self.status, 1)
 
         self.rno.textChanged.connect(self.handleRollNo)
-        self.handleRollNo_conn = self.rno.returnPressed.connect(
-            lambda: self.handleRollNo(self.rno.text())
-        )
+        self.reconnectRnoHandler()
         self.PassType.model().item(3).setEnabled(
             DATE.weekday() == 4
         )  # Enable namaaz pass if friday
@@ -169,7 +167,8 @@ class MainWin(QMainWindow):
     def setupOptions(self):
         settingsMenu = QMenu(self)
         settingsMenu.addAction("Set Lunch time", self.setLunchTime)
-        settingsMenu.addAction("Download History", self.dloadMonthHistory)
+        settingsMenu.addAction("Issue History", self.dlGenerationHistory)
+        settingsMenu.addAction("Scan History", self.dlScanningHistory)
         settingsMenu.addAction("Latecomers data", self.getLatecomersData)
 
         self.Tools.setMenu(settingsMenu)
@@ -187,13 +186,19 @@ class MainWin(QMainWindow):
         if dlg.error: 
             del dlg 
             return
-        
+
         dlg.show()
         self.status.setText("Waiting...")
 
-    def dloadMonthHistory(self):
-        self.status.setText("Downloading Pass History")
-        dlg = GetHistoryDialog(self)
+    def dlGenerationHistory(self):
+        self.status.setText("Downloading Pass Issue History")
+        dlg = GetHistoryDialog(self, "Issue")
+        dlg.show()
+        self.status.setText("Waiting...")
+
+    def dlScanningHistory(self):
+        self.status.setText("Downloading Pass Scan History")
+        dlg = GetHistoryDialog(self, "Scan")
         dlg.show()
         self.status.setText("Waiting...")
 
