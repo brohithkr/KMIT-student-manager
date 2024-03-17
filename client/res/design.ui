@@ -182,7 +182,7 @@
      <string>Generate</string>
     </property>
    </widget>
-   <widget class="QLabel" name="invalid">
+   <widget class="QLabel" name="invalidRno">
     <property name="geometry">
      <rect>
       <x>140</x>

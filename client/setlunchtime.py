@@ -1,9 +1,15 @@
 from PyQt5.QtWidgets import (
-    QDialog, QTimeEdit, QDialogButtonBox, QLayout,
-    QLabel, QHBoxLayout, QVBoxLayout, QMessageBox
+    QDialog,
+    QTimeEdit,
+    QDialogButtonBox,
+    QLayout,
+    QLabel,
+    QHBoxLayout,
+    QVBoxLayout,
+    QMessageBox,
 )
 from PyQt5.QtGui import QKeyEvent, QCloseEvent
-from PyQt5.QtCore import pyqtSignal, Qt 
+from PyQt5.QtCore import pyqtSignal, Qt
 
 from datetime import datetime
 from typing import List
@@ -11,9 +17,11 @@ from requests import get as urlget, post as urlpost, ConnectionError, Timeout
 
 from srvrcfg import SERVERURL, headers, TIMEOUT
 
+
 class LunchTimeDialog(QDialog):
     invalid = pyqtSignal()
-    def __init__(self, parent = None):
+
+    def __init__(self, parent=None):
         super().__init__(parent=parent)
         self.setWindowTitle("Set Lunch Time")
 
@@ -23,9 +31,10 @@ class LunchTimeDialog(QDialog):
 
         self.setWindowFlag(Qt.WindowContextHelpButtonHint, False)
         buttonBox = QDialogButtonBox(QDialogButtonBox.Ok, self)
-        
-        self.start: List[QTimeEdit]= []
-        self.end: List[QTimeEdit] = [] 
+
+        self.error = False
+        self.start: List[QTimeEdit] = []
+        self.end: List[QTimeEdit] = []
         self.years: List[QHBoxLayout] = []
         self.label: List[QLabel] = []
         self.label2: List[QLabel] = []
@@ -53,19 +62,24 @@ class LunchTimeDialog(QDialog):
         buttonBox.accepted.connect(self.setLunchTime)
 
     def getLunchTime(self):
-        try: 
+        res = None
+        try:
             res = urlget(f"{SERVERURL}/get_timings", timeout=TIMEOUT).json()
         except (ConnectionError, Timeout):
             self.parent().error("Connection Error!\nCheck Connection & Try again.")
-            self.status.setText("Connection Error.")
+            self.parent().status.setText("Connection Error.")
+            self.error = True
+            self.reject()
             return
 
-        if res==[]:
+        if res == []:
             QMessageBox.warning(self.parent(), "Warning!", "Lunch Timings not set!")
-            res = [ {"opening_time": "12:00", "closing_time": "13:00"},
-                    {"opening_time": "13:00", "closing_time": "14:00"},
-                    {"opening_time": "13:00", "closing_time": "14:00"},
-                    {"opening_time": "13:00", "closing_time": "14:00"} ]
+            res = [
+                {"opening_time": "12:00", "closing_time": "13:00"},
+                {"opening_time": "13:00", "closing_time": "14:00"},
+                {"opening_time": "13:00", "closing_time": "14:00"},
+                {"opening_time": "13:00", "closing_time": "14:00"},
+            ]
 
         for i in range(3):
             start = datetime.strptime(res[i]["opening_time"], "%H:%M").time()
@@ -77,13 +91,22 @@ class LunchTimeDialog(QDialog):
     def setLunchTime(self):
         lunchtimes = []
         for i in range(3):
-            lunchtimes.append({"opening_time": self.start[i].time().toString("HH:mm"),
-                               "closing_time": self.end[i].time().toString("HH:mm")})
+            lunchtimes.append(
+                {
+                    "opening_time": self.start[i].time().toString("HH:mm"),
+                    "closing_time": self.end[i].time().toString("HH:mm"),
+                }
+            )
             # print("Start", i, ":", start)
             # print("End", i, ":", end)
 
-        try :
-            res = urlpost(f"{SERVERURL}/edit_timings", headers=headers, json=lunchtimes, timeout=TIMEOUT)
+        try:
+            res = urlpost(
+                f"{SERVERURL}/edit_timings",
+                headers=headers,
+                json=lunchtimes,
+                timeout=TIMEOUT,
+            )
         except (ConnectionError, Timeout):
             self.parent().error("Connection Error!\nCheck Connection & Try again.")
             self.parent().status.setText("Connection Error.")
@@ -92,7 +115,7 @@ class LunchTimeDialog(QDialog):
         if res.status_code == 200:
             self.parent().success("Lunch Time modified successfully.")
             self.close()
-        else: 
+        else:
             self.parent().status.setText("Unexpected Error.")
             self.parent().error(f"Unexpected Error. {res.content.decode()}")
 

@@ -1,9 +1,15 @@
 from PyQt5.QtWidgets import (
-    QDialog, QDateEdit, QDialogButtonBox, QLayout,
-    QLabel, QLineEdit, QCheckBox, QFormLayout
+    QDialog,
+    QDateEdit,
+    QDialogButtonBox,
+    QLayout,
+    QLabel,
+    QLineEdit,
+    QCheckBox,
+    QFormLayout,
 )
 from PyQt5.QtGui import QCloseEvent
-from PyQt5.QtCore import pyqtSignal, Qt 
+from PyQt5.QtCore import pyqtSignal, Qt
 
 from datetime import date
 from re import fullmatch
@@ -13,8 +19,7 @@ from srvrcfg import SERVERURL
 DATE = date.today()
 
 class GetHistoryDialog(QDialog):
-    invalid = pyqtSignal()
-    def __init__(self, parent =None):
+    def __init__(self, parent=None):
         super().__init__(parent=parent)
         self.setWindowTitle("History")
 
@@ -41,14 +46,17 @@ class GetHistoryDialog(QDialog):
         self.rno = QLineEdit()
         self.rno.setPlaceholderText("(Optional)")
         self.rno.setMaxLength(10)
-        self.rno.editingFinished.connect(lambda: self.rno.setText(self.rno.text().upper()))
+        self.rno.editingFinished.connect(
+            lambda: self.rno.setText(self.rno.text().upper())
+        )
         # self.rno.textChanged.connect(lambda: self.fullHistory.setEnabled(bool(self.rno.text())))
-
 
         self.fullHistory = QCheckBox("Get Full History")
         self.fullHistory.setChecked(False)
         # self.fullHistory.setDisabled(True)
-        self.fullHistory.toggled.connect(lambda state: (self.start.setDisabled(state), self.end.setDisabled(state)))
+        self.fullHistory.toggled.connect(
+            lambda state: (self.start.setDisabled(state), self.end.setDisabled(state))
+        )
 
         layout = QFormLayout(self)
         layout.addRow(self.startLabel, self.start)
@@ -67,7 +75,11 @@ class GetHistoryDialog(QDialog):
             self.parent().error("Provide a valid Roll No. to filter history")
             return
 
-        if (start:=self.start.date().toPyDate()) > DATE or (end:=self.end.date().toPyDate()) > DATE or start > end:
+        if (
+            (start := self.start.date().toPyDate()) > DATE
+            or (end := self.end.date().toPyDate()) > DATE
+            or start > end
+        ):
             self.parent().error("Provide valid range of Dates")
             return
 
@@ -75,16 +87,23 @@ class GetHistoryDialog(QDialog):
         end = self.end.date().toString("dd-MM-yyyy")
 
         from webbrowser import open as open_in_browser
-        
+
         baseurl = f"{SERVERURL}/get_issued_passes"
         args = "ret_type=csv"
         if rno:
             args += f"&based_on=rollno&roll_no={rno}"
-            if not self.fullHistory.isChecked(): args += f"&frm={start}&to={end}"
-        elif not self.fullHistory.isChecked(): args += f"&frm={start}&to={end}"
-        open_in_browser(f"{baseurl}?{args}") 
+            if not self.fullHistory.isChecked():
+                args += f"&frm={start}&to={end}"
+        elif not self.fullHistory.isChecked():
+            args += f"&frm={start}&to={end}"
+        open_in_browser(f"{baseurl}?{args}")
         self.parent().success("CSV Download started in browser.")
         self.close()
+
+    def reject(self):
+        if self.parent():
+            self.parent().setEnabled(True)
+        super().reject()
 
     def closeEvent(self, a0: QCloseEvent) -> None:
         if self.parent():
