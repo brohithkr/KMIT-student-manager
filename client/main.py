@@ -20,7 +20,7 @@ import sys
 from setlunchtime import *
 from gethistory import *
 from getlatecomers import *
-from srvrcfg import SERVERURL, headers
+from srvrcfg import SERVERURL, headers, TIMEOUT
 
 BASE_DIR = None
 if getattr(sys, 'frozen', False): BASE_DIR = dirname(executable)
@@ -58,6 +58,7 @@ class MainWin(QMainWindow):
 
         self.rno.textChanged.connect(self.handleRollNo)
         self.handleRollNo_conn = self.rno.returnPressed.connect(lambda: self.handleRollNo(self.rno.text()))
+        self.PassType.model().item(3).setEnabled(DATE.weekday() == 4)  # Enable namaaz pass if friday
         # self.rno.returnPressed.connect(lambda: self.PassType.setFocus())
 
         self.PassType.currentIndexChanged.connect(lambda idx: self.GenPassBtn.setEnabled(idx > -1))
@@ -126,8 +127,9 @@ class MainWin(QMainWindow):
         self.details.setStyleSheet("color: #000")
         self.details.setAlignment(Qt.AlignmentFlag.AlignLeft|Qt.AlignmentFlag.AlignVCenter)
 
-                                                # 403 while fetching image
-        if student_details["picture"] in {None, "PCFET0NUWVBFIEhUTUwgUFVCTElDICItLy9JRVRGLy9EVEQgSFRNTCAyLjAvL0VOIj4KPGh0bWw+PGhlYWQ+Cjx0aXRsZT40MDMgRm9yYmlkZGVuPC90aXRsZT4KPC9oZWFkPjxib2R5Pgo8aDE+Rm9yYmlkZGVuPC9oMT4KPHA+WW91IGRvbid0IGhhdmUgcGVybWlzc2lvbiB0byBhY2Nlc3MgdGhpcyByZXNvdXJjZS48L3A+CjxwPkFkZGl0aW9uYWxseSwgYSA0MDMgRm9yYmlkZGVuCmVycm9yIHdhcyBlbmNvdW50ZXJlZCB3aGlsZSB0cnlpbmcgdG8gdXNlIGFuIEVycm9yRG9jdW1lbnQgdG8gaGFuZGxlIHRoZSByZXF1ZXN0LjwvcD4KPC9ib2R5PjwvaHRtbD4K"}:
+        if student_details["picture"] in {None, 
+                # 403 while fetching image
+                "PCFET0NUWVBFIEhUTUwgUFVCTElDICItLy9JRVRGLy9EVEQgSFRNTCAyLjAvL0VOIj4KPGh0bWw+PGhlYWQ+Cjx0aXRsZT40MDMgRm9yYmlkZGVuPC90aXRsZT4KPC9oZWFkPjxib2R5Pgo8aDE+Rm9yYmlkZGVuPC9oMT4KPHA+WW91IGRvbid0IGhhdmUgcGVybWlzc2lvbiB0byBhY2Nlc3MgdGhpcyByZXNvdXJjZS48L3A+CjxwPkFkZGl0aW9uYWxseSwgYSA0MDMgRm9yYmlkZGVuCmVycm9yIHdhcyBlbmNvdW50ZXJlZCB3aGlsZSB0cnlpbmcgdG8gdXNlIGFuIEVycm9yRG9jdW1lbnQgdG8gaGFuZGxlIHRoZSByZXF1ZXN0LjwvcD4KPC9ib2R5PjwvaHRtbD4K"}:
             self._SetImg(*anonymous_img)
             self._SetImg("Image not found", "Error", False)
         else:
@@ -192,9 +194,11 @@ class MainWin(QMainWindow):
             response = urlpost(f"{SERVERURL}/gen_pass", headers=headers, 
                                 json={"roll_no": self.rno.text().upper(), 
                                 "pass_type": "one_time" if passtype == 0 else
-                                                "daily" if passtype == 1 else "alumni" })
+                                                "daily" if passtype == 1 else 
+                                                "alumni" if passtype == 2 else "namaaz" }, 
+                                timeout=TIMEOUT)
         except (ConnectionError, Timeout):
-            self.error("Connection Error!\nCheck Internet & Try again.")
+            self.error("Connection Error!\nCheck Connection & Try again.")
             self.status.setText("Connection Error.")
             return
         
@@ -240,7 +244,7 @@ class DetailsFetcher(QObject):
 
     def updateDetails(self):
         try: 
-            self.res = urlget(f"{SERVERURL}/get_student_data?rollno={self.rno}", headers=headers)
+            self.res = urlget(f"{SERVERURL}/get_student_data?rollno={self.rno}", headers=headers, timeout=TIMEOUT)
         except (ConnectionError, Timeout):
             self.error.emit("Unable to connect to server. Check connection & Try again.")
             return

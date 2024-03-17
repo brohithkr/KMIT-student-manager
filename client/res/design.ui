@@ -96,6 +96,11 @@
        <string>Alumni Pass (4th Year)</string>
       </property>
      </item>
+     <item>
+      <property name="text">
+       <string>Namaaz Pass (Fridays)</string>
+      </property>
+     </item>
     </widget>
     <widget class="QToolButton" name="Tools">
      <property name="geometry">

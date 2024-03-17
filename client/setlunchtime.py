@@ -9,7 +9,7 @@ from datetime import datetime
 from typing import List
 from requests import get as urlget, post as urlpost, ConnectionError, Timeout
 
-from srvrcfg import SERVERURL, headers
+from srvrcfg import SERVERURL, headers, TIMEOUT
 
 class LunchTimeDialog(QDialog):
     invalid = pyqtSignal()
@@ -53,7 +53,13 @@ class LunchTimeDialog(QDialog):
         buttonBox.accepted.connect(self.setLunchTime)
 
     def getLunchTime(self):
-        res = urlget(f"{SERVERURL}/get_timings").json()
+        try: 
+            res = urlget(f"{SERVERURL}/get_timings", timeout=TIMEOUT).json()
+        except (ConnectionError, Timeout):
+            self.parent().error("Connection Error!\nCheck Connection & Try again.")
+            self.status.setText("Connection Error.")
+            return
+
         if res==[]:
             QMessageBox.warning(self.parent(), "Warning!", "Lunch Timings not set!")
             res = [ {"opening_time": "12:00", "closing_time": "13:00"},
@@ -77,10 +83,11 @@ class LunchTimeDialog(QDialog):
             # print("End", i, ":", end)
 
         try :
-            res = urlpost(f"{SERVERURL}/edit_timings", headers=headers, json=lunchtimes)
+            res = urlpost(f"{SERVERURL}/edit_timings", headers=headers, json=lunchtimes, timeout=TIMEOUT)
         except (ConnectionError, Timeout):
-            self.parent().error("Connection Error!\nCheck Internet & Try again.")
+            self.parent().error("Connection Error!\nCheck Connection & Try again.")
             self.parent().status.setText("Connection Error.")
+            return
 
         if res.status_code == 200:
             self.parent().success("Lunch Time modified successfully.")
