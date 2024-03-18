@@ -27,8 +27,13 @@ def get_timings(today: datetime, year: int) -> Dict[str, datetime]:
 
 
 def get_local_date(timestamp: int):
-    date = datetime.fromtimestamp(timestamp).astimezone(pytz.timezone("Asia/Kolkata"))
-    resDate = date.strftime("%d-%m-%Y %H:%M")
+    resDate = ""
+    try:
+        date = datetime.fromtimestamp(timestamp).astimezone(pytz.timezone("Asia/Kolkata"))
+        resDate = date.strftime("%d-%m-%Y %H:%M")
+    except ValueError:
+        date = datetime.fromtimestamp(timestamp/int(10e6)).astimezone(pytz.timezone("Asia/Kolkata"))
+        resDate = date.strftime("%d-%m-%Y %H:%M")
     return resDate
 
 

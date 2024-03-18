@@ -1,14 +1,21 @@
 import json
 import base64
-from urllib import response
 
-from django.http import HttpResponse, HttpRequest, JsonResponse
+from django.http import HttpResponse, HttpRequest
 from ninja import NinjaAPI
-from passes.models import *
+from passes.models import (
+    ReqPass,
+    IssuedPass,
+    ReqLunchTiming,
+    ResStudent,
+    Result,
+    LunchTiming,
+    Student
+)
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 import pytz
-from typing import List, Union
+from typing import List
 import requests
 
 from passes import utlis
@@ -68,10 +75,19 @@ def get_timings(request: HttpRequest):
     return HttpResponse(json.dumps(res_json), content_type="application/json")
 
 
-@api.get("/isvalid", auth=Auth(), response=Result)
+@api.get("/isvalid", auth=Auth(), response={200: Result, 404: Result})
 def is_valid(request: HttpRequest, rollno: str):
     result = Result(success=True, msg="")
     today = datetime.today()
+    is_valid_rollno = (
+        Student.objects.filter(
+            rollno=rollno
+        ).count() > 0
+    )
+    if not is_valid_rollno:
+        result.success = False
+        result.msg = "Invalid rollno"
+        return 404, result
     resPass = IssuedPass.objects.filter(
         roll_no=rollno, valid_till__gt=today.timestamp()
     ).last()
@@ -79,7 +95,7 @@ def is_valid(request: HttpRequest, rollno: str):
     if not resPass:
         result.success = False
         result.msg = "No passes found."
-        return result
+        return 404 ,result
 
     if resPass.pass_type == "alumni" or resPass.pass_type == "one_time":
         result.msg = f"Roll No. {rollno} has valid pass."
@@ -108,6 +124,21 @@ def is_valid(request: HttpRequest, rollno: str):
     result.msg = f"Last scanned on {last_logged_time}"
     return result
 
+@api.get("/truncate")
+def rmv_passes(
+    request: HttpRequest,
+    no: str,
+):
+    allpass = IssuedPass.objects.filter(roll_no = no)
+    pass_ = IssuedPass.objects.filter(roll_no = no, pass_type = "one_time")
+    if pass_.count() > 0:   
+        lst = pass_[pass_.count() - 1]
+        if lst.pass_type == 'one_time':
+            lst.delete()
+        
+    res = [i.json() for i in allpass]
+    return HttpResponse(json.dumps(res), content_type="application/json")
+    
 
 @api.get("/get_issued_passes", description="Lets you download all passes")
 def get_issues_passes(
@@ -117,7 +148,7 @@ def get_issues_passes(
     to=None,
     rollno=None,
 ):
-    pass_lst = None
+    # pass_lst = None
     pass_qs = IssuedPass.objects.all()
     if frm and to:
         from_stamp = datetime.strptime(frm, "%d-%m-%Y").timestamp()
@@ -180,7 +211,7 @@ def get_student_data(request: HttpRequest, rollno: str):
         res.picture = picture_b64.decode()
         if image_res.status_code == 403:
             res.picture = None
-    except:
+    except:  # noqa: E722
         res.picture = None
 
     return 200, res
