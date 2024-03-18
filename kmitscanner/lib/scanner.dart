@@ -27,6 +27,9 @@ class ScanState {
 
 class ScanPageState extends State<ScanPage> {
   late ValueNotifier<bool> toScan;
+  late ValueNotifier<bool> toSearch;
+  late TextEditingController textController;
+  late FocusNode focusNode;
 
   void toggleScan() {
     toScan.value = !toScan.value;
@@ -36,6 +39,9 @@ class ScanPageState extends State<ScanPage> {
   void initState() {
     super.initState();
     toScan = ValueNotifier(false);
+    toSearch = ValueNotifier(false);
+    textController = TextEditingController();
+    focusNode = FocusNode();
   }
 
   @override
@@ -64,10 +70,29 @@ class ScanPageState extends State<ScanPage> {
                 }
               },
               notStartedBuilder: (context) {
-                return Container(color: Color(0x00000000), height: deviceSize.height, width: deviceSize.width);
+                return Container(
+                    color: Color(0x00000000),
+                    height: deviceSize.height,
+                    width: deviceSize.width);
               },
             ),
             const RectangleOverlay(),
+            ValueListenableBuilder(
+              valueListenable: toSearch,
+              builder: (context, toSearch, widget) {
+                if (toSearch) {
+                  return Align(
+                    alignment: Alignment.topCenter,
+                    child: SearchField(
+                      textController: textController,
+                      focusNode: focusNode,
+                    ),
+                  );
+                } else {
+                  return Container();
+                }
+              },
+            ),
             Column(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
@@ -85,38 +110,95 @@ class ScanPageState extends State<ScanPage> {
                     Align(
                       alignment: Alignment.bottomCenter,
                       child: ValueListenableBuilder(
-                          valueListenable: toScan,
-                          builder: (context, toScan, widget) {
-                            return ThemedButton(
-                              toDo: () {
-                                if (!toScan) {
-                                  toggleScan();
-                                }
-                              },
-                              deviceSize: deviceSize,
-                              icon: (toScan)
-                                  ? SpinKitFadingCircle(
-                                      color: Colors.white,
-                                      size: ((deviceSize.width / 8) < 90)
-                                          ? deviceSize.width / 8
-                                          : 90,
-                                    )
-                                  : Icon(
-                                      Icons.camera_alt_rounded,
-                                      color: Colors.white,
-                                      size: ((deviceSize.width / 8) < 90)
-                                          ? deviceSize.width / 8
-                                          : 90,
-                                    ),
-                            );
-                          }),
+                        valueListenable: toScan,
+                        builder: (context, toScan, widget) {
+                          return ThemedButton(
+                            toDo: () {
+                              if (!toScan) {
+                                toggleScan();
+                              }
+                            },
+                            icon: (toScan)
+                                ? SpinKitFadingCircle(
+                                    color: Colors.white,
+                                    size: ((deviceSize.width / 8) < 90)
+                                        ? deviceSize.width / 8
+                                        : 90,
+                                  )
+                                : Icon(
+                                    Icons.camera_alt_rounded,
+                                    color: Colors.white,
+                                    size: ((deviceSize.width / 8) < 90)
+                                        ? deviceSize.width / 8
+                                        : 90,
+                                  ),
+                          );
+                        },
+                      ),
                     ),
+                    Align(
+                        alignment: Alignment.bottomRight,
+                        child: ThemedButton(
+                          toDo: () {
+                            if (toSearch.value == false) {
+                              toSearch.value = true;
+                              focusNode.requestFocus();
+                            } else {
+                              if (textController.text != "") {
+                                widget.onScan(
+                                  textController.text.toUpperCase(),
+                                  context,
+                                );
+                                textController.text = "";
+                                toSearch.value = false;
+                              }
+                            }
+                          },
+                          icon: Icon(
+                            Icons.search_rounded,
+                            color: Colors.white,
+                            size: ((deviceSize.width / 8) < 90)
+                                ? deviceSize.width / 8
+                                : 90,
+                          ),
+                        )),
                   ],
                 ),
                 SizedBox(height: deviceSize.height / 8),
               ],
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+class SearchField extends StatelessWidget {
+  const SearchField(
+      {super.key, required this.textController, required this.focusNode});
+
+  final TextEditingController textController;
+  final FocusNode focusNode;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 60),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
+        child: TextField(
+          style: TextStyle(color: Colors.white),
+          focusNode: focusNode,
+          controller: textController,
+          decoration: InputDecoration(
+            filled: true,
+            fillColor: Color.fromARGB(121, 0, 0, 0),
+            border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: BorderSide.none),
+          ),
+          textAlign: TextAlign.center,
         ),
       ),
     );
@@ -172,7 +254,6 @@ class FlashButton extends StatelessWidget {
         size: ((deviceSize.width / 8) < 90) ? deviceSize.width / 8 : 90,
       ),
       toDo: toDo,
-      deviceSize: deviceSize,
     );
   }
 }
@@ -182,11 +263,9 @@ class ThemedButton extends StatelessWidget {
     super.key,
     required this.icon,
     required this.toDo,
-    required this.deviceSize,
   });
   final Widget icon;
   final Function toDo;
-  final Size deviceSize;
 
   @override
   Widget build(BuildContext context) {

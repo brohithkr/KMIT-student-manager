@@ -22,7 +22,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     String title = "Garuda Scanner";
-    Future<bool> loaded = utlis.refresh();
+    Future<bool> loaded = utlis.refresh(startup: true);
 
     return MaterialApp(
       title: title,
