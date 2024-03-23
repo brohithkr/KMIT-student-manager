@@ -183,8 +183,8 @@ class MainWin(QMainWindow):
         self.status.setText("Modifying Lunch Time")
         dlg = LunchTimeDialog(self)
 
-        if dlg.error: 
-            del dlg 
+        if dlg.error:
+            del dlg
             return
 
         dlg.show()
@@ -272,7 +272,13 @@ class MainWin(QMainWindow):
 
         self.status.setText("Generating Pass")
 
-        result = response.content.decode()
+        result = (
+            response.content.decode()
+            .replace("one_time", "Gate")
+            .replace("daily", "Lunch")
+            .replace("alumni", "Alumni")
+            .replace("nammaz", "Namaaz")
+        )
 
         if result.startswith("Error:"):
             self.error(result.split(":", 1)[1])
@@ -281,32 +287,27 @@ class MainWin(QMainWindow):
             self.error(f"Server error. Returned:\n{result}")
             self.status.setText("Server Error")
         elif result.startswith("Warning:"):
+            self.warning(result.split(":", 1)[1])
             self.status.setText("Done")
         elif response.status_code == 200:
             self.success("Pass Successfully created")
             self.status.setText("Done")
         else:
             self.error(
-                f"Unexpected server-side error:\nResponse code: {response.status_code}\n{response.content.decode()}"
+                f"Unexpected server-side error:\nResponse code: {response.status_code}\n{result}"
             )
 
     @pyqtSlot(str)
-    def error(self, msg):
-        QMessageBox.critical(self, "Error!", msg)
+    def error(self, msg: str):
+        QMessageBox.critical(self, "Error!", msg.strip())
 
     @pyqtSlot(str)
-    def success(self, msg):
-        QMessageBox.information(self, "Success", msg)
+    def warning(self, msg: str):
+        QMessageBox.warning(self, "Warning", msg.strip())
 
-    @pyqtSlot(int)
-    def crash(self, response):
-        QMessageBox.critical(
-            self,
-            "Server Error!!",
-            f"Unexpected server error occured.\nResponse code: {response}",
-        )
-        exit()
-
+    @pyqtSlot(str)
+    def success(self, msg: str):
+        QMessageBox.information(self, "Success", msg.strip())
 
 class DetailsFetcher(QObject):
     error = pyqtSignal(str)
