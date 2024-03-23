@@ -38,7 +38,9 @@ Future<Map<String, dynamic>> getValidity(rollno) async {
         headers: Map.from({"authorization": "bearer $auth_token"}));
     return jsonDecode(res.body);
   } catch (e) {
-    return Map.from({"success": false, "msg": "Please connetc to internet."});
+    debugPrint(e.toString());
+    debugPrint("e.toString()");
+    return Map.from({"success": false, "msg": "Please connect to internet. $e"});
   }
 }
 
@@ -87,15 +89,17 @@ Future<Map<String, dynamic>> remLatecomers(String rollno) async {
       headers: Map.from({"authorization": "bearer $auth_token"}),
       body: jsonEncode(<String,String>{"roll_no":rollno,"date":DateTime.now().microsecondsSinceEpoch.toString()})
     );
-    var x = (res.body);
+    // var x = (res.body);
     return jsonDecode(res.body);
   } catch (e) {
     debugPrint(e.toString());
-    return Map.from({"success": false, "msg": "Please connect to internet."});
+    debugPrint("e.toString()");
+    return Map.from({"success": false, "msg": "Please connect to internet.\n$e"});
   }
 }
 
 Future<bool> refresh({bool startup = false}) async {
+  return true;
   if (startup) {
     if (await isDbPresent()) {
       return true;
@@ -120,7 +124,7 @@ Future<bool> refresh({bool startup = false}) async {
 // }
 
 void main() async {
-  print(await getValidity("22BD1A0505"));
+  // print(await getValidity("22BD1A0505"));
   // String now = (DateTime.now().millisecondsSinceEpoch.toString());
   // var res = await http.post(
   //   Uri.parse("$hostUrl/latecomers"),
