@@ -31,7 +31,11 @@ jobs:
 
       - name: Package Application
         run: |
+          cd client
           python ./build-exe.py
-          ls 
-          ls dist
 
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with: 
+          name: generator
+          path: client/dist/generator.exe
