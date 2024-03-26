@@ -38,6 +38,14 @@ def get_local_date(timestamp: int):
 
 
 def log(roll_no: str) -> int | None:
+    """Logs the given roll no and gives the last time the pass was scanned for the given user.
+
+    Args:
+        roll_no (str): roll no to log the pass scanning
+
+    Returns:
+        int | None: unix time stamp of last time scanned
+    """
     # print(datetime.fromtimestamp(datetime.today().timestamp()))
     last_logged = Logging.objects.filter(roll_no=roll_no).last()
     try:

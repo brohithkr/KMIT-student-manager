@@ -46,6 +46,8 @@ def gen_pass(request: HttpRequest, reqPass: ReqPass):
         valid_till = today + relativedelta(months=6)
     if reqPass.pass_type == "alumni":
         valid_till = today + relativedelta(years=70)
+    if reqPass.pass_type == "namaaz":
+        valid_till = today + timedelta(days=1)
 
     IssuedPass.objects.create(
         roll_no=reqPass.roll_no,
@@ -119,6 +121,12 @@ def is_valid(request: HttpRequest, rollno: str):
         result.success = False
         result.msg = "Not the appropriate time"
         return result
+
+    if resPass.pass_type == "namaaz":
+        if today.isoweekday() != 5:
+            result.success = False
+            result.msg = "Invalid Pass"
+            return result
 
     last_logged_time = utlis.log(roll_no=rollno)
     result.msg = f"Last scanned on {last_logged_time}"
