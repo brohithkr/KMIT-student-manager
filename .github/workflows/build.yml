@@ -1,0 +1,23 @@
+name: Build
+on: 
+  push:
+    paths: client/*
+  workflow_dispatch: 
+jobs:
+  build:
+    runs-on: windows-latest
+    
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Package Application
+        shell: bash
+        run: |
+          cd client
+          python -m venv .venv
+          . ./.venv/Scripts/activate.sh
+          pip install -r ./requirements.txt
+          python ./build-exe.py
+          tree
+
