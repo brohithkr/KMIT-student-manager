@@ -18,9 +18,7 @@ jobs:
         run: |
           cd client
           python -m venv .venv
-          ls .venv/Scripts
-          ls .venc/scripts
-          . ./.venv/Scripts/activate.sh
+          . ./.venv/Scripts/activate
           pip install -r ./requirements.txt
           python ./build-exe.py
           ls 
