@@ -32,6 +32,7 @@ jobs:
       - name: Package Application
         run: |
           cd client
+          . ./.venv/Scripts/activate
           python ./build-exe.py
 
       - name: Upload artifact
