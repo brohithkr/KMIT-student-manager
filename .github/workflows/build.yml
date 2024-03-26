@@ -18,9 +18,11 @@ jobs:
         run: |
           cd client
           python -m venv .venv
-          tree .venv
+          ls .venv/Scripts
+          ls .venc/scripts
           . ./.venv/Scripts/activate.sh
           pip install -r ./requirements.txt
           python ./build-exe.py
-          tree
+          ls 
+          ls dist
 
