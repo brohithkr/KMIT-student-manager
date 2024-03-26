@@ -13,13 +13,24 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Package Application
+      - name: Install requirements 
         shell: bash
         run: |
           cd client
           python -m venv .venv
           . ./.venv/Scripts/activate
           pip install -r ./requirements.txt
+
+      - name: Create srvrcfg.py
+        run: |
+          echo "SERVERURL = \"${{secrets.SERVERURL}}\"
+          TIMEOUT = 3
+          headers = {
+              "authorization": "Bearer ${{secrets.ACCESS_TOKEN}}"
+          }" > ./client/srvrcfg.py
+
+      - name: Package Application
+        run: |
           python ./build-exe.py
           ls 
           ls dist
