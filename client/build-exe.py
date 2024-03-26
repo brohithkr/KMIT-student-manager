@@ -17,12 +17,12 @@ delim = ":"
 strip = "s"
 iconext = "png"
 if ostype == "Windows":
-    extras = f"-i {joinpath('.', 'client', 'res', 'kmit.ico')} "
+    extras = f"-i {joinpath('.', 'res', 'kmit.ico')} "
     delim = ";"
     strip = ""
     iconext = "ico"
 elif ostype == "Darwin":
-    extras = f"-i {joinpath('.', 'client', 'res', 'kmit.icns')} "
+    extras = f"-i {joinpath('.', 'res', 'kmit.icns')} "
     iconext = "icns"
 
 args = (
