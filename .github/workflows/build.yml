@@ -26,7 +26,8 @@ jobs:
           TIMEOUT = 3
           headers = {
               "authorization": "Bearer ${{secrets.ACCESS_TOKEN}}"
-          }" > ./client/srvrcfg.py
+          }" > client/srvrcfg.py
+          ls client
 
       - name: Package Application
         run: |
