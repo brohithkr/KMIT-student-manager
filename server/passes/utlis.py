@@ -1,6 +1,6 @@
 from datetime import date, datetime
 from passes.models import LunchTiming, Logging
-from typing import Dict
+from typing import Dict, Union
 import pytz
 
 
@@ -37,7 +37,7 @@ def get_local_date(timestamp: int):
     return resDate
 
 
-def log(roll_no: str) -> int | None:
+def log(roll_no: str) -> Union[int, None]:
     """Logs the given roll no and gives the last time the pass was scanned for the given user.
 
     Args:

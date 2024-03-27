@@ -1,3 +1,4 @@
+from genericpath import isdir, isfile
 import json
 import base64
 
@@ -12,6 +13,7 @@ from passes.models import (
     LunchTiming,
     Student
 )
+import os
 from datetime import datetime, timedelta
 from dateutil.relativedelta import relativedelta
 import pytz
@@ -213,13 +215,26 @@ def get_student_data(request: HttpRequest, rollno: str):
         return 404, "No rollno found"
     picture_bytes = None
     try:
-        image_res = requests.get(str(res.picture), timeout=3)
-        picture_bytes = image_res.content
+        if os.path.isdir("./studentImages"):
+            if not os.path.isfile(f"./studentImages/{rollno}.jpg"):
+                res.picture = None
+                return 200, res
+            with open(f"./studentImages/{rollno}.jpg", "rb") as img:
+                picture_bytes = img.read()
+        else:
+            image_res = requests.get(str(res.picture), timeout=3)
+            picture_bytes = image_res.content
+            if image_res.status_code == 403:
+                res.picture = None
+                return 200, res
         picture_b64 = base64.b64encode(picture_bytes)
         res.picture = picture_b64.decode()
-        if image_res.status_code == 403:
-            res.picture = None
     except:  # noqa: E722
         res.picture = None
 
     return 200, res
+
+@api.get("/get_scan_history")
+def get_scan_history(request: HttpRequest, ):
+    pass
+    
