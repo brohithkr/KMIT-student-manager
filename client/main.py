@@ -154,11 +154,7 @@ class MainWin(QMainWindow):
             Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
         )
 
-        if student_details["picture"] in {
-            None,
-            # 403 while fetching image
-            "PCFET0NUWVBFIEhUTUwgUFVCTElDICItLy9JRVRGLy9EVEQgSFRNTCAyLjAvL0VOIj4KPGh0bWw+PGhlYWQ+Cjx0aXRsZT40MDMgRm9yYmlkZGVuPC90aXRsZT4KPC9oZWFkPjxib2R5Pgo8aDE+Rm9yYmlkZGVuPC9oMT4KPHA+WW91IGRvbid0IGhhdmUgcGVybWlzc2lvbiB0byBhY2Nlc3MgdGhpcyByZXNvdXJjZS48L3A+CjxwPkFkZGl0aW9uYWxseSwgYSA0MDMgRm9yYmlkZGVuCmVycm9yIHdhcyBlbmNvdW50ZXJlZCB3aGlsZSB0cnlpbmcgdG8gdXNlIGFuIEVycm9yRG9jdW1lbnQgdG8gaGFuZGxlIHRoZSByZXF1ZXN0LjwvcD4KPC9ib2R5PjwvaHRtbD4K",
-        }:
+        if student_details["picture"] in {None, ""}:
             self._SetImg(*anonymous_img)
             self._SetImg("Image not found", "Error", False)
         else:
@@ -308,6 +304,7 @@ class MainWin(QMainWindow):
     @pyqtSlot(str)
     def success(self, msg: str):
         QMessageBox.information(self, "Success", msg.strip())
+
 
 class DetailsFetcher(QObject):
     error = pyqtSignal(str)
