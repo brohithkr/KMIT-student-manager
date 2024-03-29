@@ -277,7 +277,7 @@ class MainWin(QMainWindow):
             .replace("one_time", "Gate")
             .replace("daily", "Lunch")
             .replace("alumni", "Alumni")
-            .replace("nammaz", "Namaaz")
+            .replace("namaaz", "Namaaz")
         )
 
         if result.startswith("Error:"):
