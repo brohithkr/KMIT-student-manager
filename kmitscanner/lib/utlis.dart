@@ -35,16 +35,17 @@ dynamic getDecryptedData(String endata) {
 Future<Map<String, dynamic>> getValidity(rollno) async {
   try {
     var res = await http.get(Uri.parse("$hostUrl/isvalid?rollno=$rollno"),
-        headers: Map.from({"authorization": "bearer $auth_token"}));
+        headers: Map.from({"authorization": "bearer $authToken"}));
     return jsonDecode(res.body);
   } catch (e) {
     debugPrint(e.toString());
     debugPrint("e.toString()");
-    return Map.from({"success": false, "msg": "Please connect to internet. $e"});
+    return Map.from(
+        {"success": false, "msg": "Please connect to internet. $e"});
   }
 }
 
-Future<bool> isValidPass_old(rollno) async {
+Future<bool> isValidPassOld(rollno) async {
   var passFuture = ValidPass.by(rollno: rollno);
   // var res = await _isValidPass(passFuture);
   var pass = (await passFuture)[0];
@@ -57,22 +58,22 @@ Future<bool> isValidPass_old(rollno) async {
 
   int year = rollToYear(pass['rollno'] as String);
   if (pass['pass_type'] == 'alumni' || pass['pass_type'] == 'single_use') {
+    // ignore: avoid_print
     print("Is True");
     return true;
   }
   var timing = await getTimings()[year - 1];
 
-  var st_arr = (timing['opening_time'].split(":") as List<String>)
+  var stArr = (timing['opening_time'].split(":") as List<String>)
       .map((e) => int.parse(e))
       .toList();
-  var en_arr = (timing['closing_time'].split(":") as List<String>)
+  var enArr = (timing['closing_time'].split(":") as List<String>)
       .map((e) => int.parse(e))
       .toList();
 
-  int startStamp =
-      DateTime(now.year, now.month, now.day, st_arr[0], st_arr[1], 0)
-          .millisecondsSinceEpoch;
-  int endStamp = DateTime(now.year, now.month, now.day, en_arr[0], en_arr[1], 0)
+  int startStamp = DateTime(now.year, now.month, now.day, stArr[0], stArr[1], 0)
+      .millisecondsSinceEpoch;
+  int endStamp = DateTime(now.year, now.month, now.day, enArr[0], enArr[1], 0)
       .millisecondsSinceEpoch;
   int nowStamp = now.millisecondsSinceEpoch;
   if (!(nowStamp > startStamp && nowStamp < endStamp)) {
@@ -84,35 +85,37 @@ Future<bool> isValidPass_old(rollno) async {
 
 Future<Map<String, dynamic>> remLatecomers(String rollno) async {
   try {
-    var res = await http.post(
-      Uri.parse("$hostUrl/latecomers/"),
-      headers: Map.from({"authorization": "bearer $auth_token"}),
-      body: jsonEncode(<String,String>{"roll_no":rollno,"date":DateTime.now().microsecondsSinceEpoch.toString()})
-    );
+    var res = await http.post(Uri.parse("$hostUrl/latecomers/"),
+        headers: Map.from({"authorization": "bearer $authToken"}),
+        body: jsonEncode(<String, String>{
+          "roll_no": rollno,
+          "date": DateTime.now().microsecondsSinceEpoch.toString()
+        }));
     // var x = (res.body);
     return jsonDecode(res.body);
   } catch (e) {
     debugPrint(e.toString());
     debugPrint("e.toString()");
-    return Map.from({"success": false, "msg": "Please connect to internet.\n$e"});
+    return Map.from(
+        {"success": false, "msg": "Please connect to internet.\n$e"});
   }
 }
 
 Future<bool> refresh({bool startup = false}) async {
   return true;
-  if (startup) {
-    if (await isDbPresent()) {
-      return true;
-    }
-  }
-  try {
-    await refreshTimings();
-    await ValidPass.loadAll();
-    print(await getValidity("22BD1A0505"));
-    return true;
-  } catch (e) {
-    return false;
-  }
+  // if (startup) {
+  //   if (await isDbPresent()) {
+  //     return true;
+  //   }
+  // }
+  // try {
+  //   await refreshTimings();
+  //   await ValidPass.loadAll();
+  //   print(await getValidity("22BD1A0505"));
+  //   return true;
+  // } catch (e) {
+  //   return false;
+  // }
 }
 
 // Future<bool> refreshStartup() async {

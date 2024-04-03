@@ -53,15 +53,15 @@ Future<Database> openDB() async {
 
 class ValidPass {
   String rollno;
-  String pass_type;
-  BigInt issue_date;
-  BigInt valid_till;
+  String passType;
+  BigInt issueDate;
+  BigInt validTill;
 
   ValidPass(
     this.rollno,
-    this.pass_type,
-    this.issue_date,
-    this.valid_till,
+    this.passType,
+    this.issueDate,
+    this.validTill,
   );
 
   static const tablename = "valid_pass";
@@ -69,9 +69,9 @@ class ValidPass {
   Map<String, dynamic> toMap() {
     return {
       "roll_no": rollno,
-      "pass_type": pass_type,
-      "issue_date": issue_date,
-      "valid_till": valid_till,
+      "pass_type": passType,
+      "issue_date": issueDate,
+      "valid_till": validTill,
     };
   }
 
