@@ -24,13 +24,21 @@ def fix_issues(data: dict):
             data[i] = fix_3rd_yr_rno(data[i])
     return data
 
+def convert_to_map(data: list):
+    mapping: dict = {}
+    for i in range(len(data)):
+        mapping[data[i]["hallticketno"]] = data[i]["firstname"]
+        # mapping[data[i]["hallticketno"]] = {"n": data[i]["firstname"], "rno": data[i]["rollno"]}
+    return mapping
+
+
 with open("./students.json") as dataf:
     data = json.load(dataf)
 
-data = fix_issues(data)
-with open("./students.json", "w") as f:
+data = convert_to_map(data)
+with open("./students_mapped_s.json", "w") as f:
     json.dump(data,f, indent=3)
 
 
 
-        
+
