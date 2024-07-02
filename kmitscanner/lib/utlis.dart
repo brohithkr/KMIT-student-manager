@@ -35,7 +35,7 @@ dynamic getDecryptedData(String endata) {
 Future<Map<String, dynamic>> getValidity(rollno) async {
   try {
     var res = await http.get(Uri.parse("$hostUrl/isvalid?rollno=$rollno"),
-        headers: Map.from({"authorization": "bearer $authToken"}));
+        headers: Map.from({"authorization": "bearer $auth_token"}));
     return jsonDecode(res.body);
   } catch (e) {
     debugPrint(e.toString());
@@ -86,16 +86,15 @@ Future<bool> isValidPassOld(rollno) async {
 Future<Map<String, dynamic>> remLatecomers(String rollno) async {
   try {
     var res = await http.post(Uri.parse("$hostUrl/latecomers/"),
-        headers: Map.from({"authorization": "bearer $authToken"}),
+        headers: Map.from({"authorization": "bearer $auth_token"}),
         body: jsonEncode(<String, String>{
           "roll_no": rollno,
-          "date": DateTime.now().microsecondsSinceEpoch.toString()
+          "date": (DateTime.now().microsecondsSinceEpoch~/10e6).toString()
         }));
     // var x = (res.body);
     return jsonDecode(res.body);
   } catch (e) {
     debugPrint(e.toString());
-    debugPrint("e.toString()");
     return Map.from(
         {"success": false, "msg": "Please connect to internet.\n$e"});
   }
@@ -115,7 +114,7 @@ Future<bool> refresh({bool startup = false}) async {
   //   return true;
   // } catch (e) {
   //   return false;
-  // }
+  // }    
 }
 
 // Future<bool> refreshStartup() async {
