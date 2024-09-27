@@ -101,10 +101,6 @@ def is_valid(request: HttpRequest, rollno: str):
         result.msg = "No passes found."
         return 404 ,result
 
-    if resPass.pass_type == "alumni" or resPass.pass_type == "one_time":
-        result.msg = f"Roll No. {rollno} has valid pass."
-        return result
-
     timings = utlis.get_timings(
         today.astimezone(pytz.timezone("Asia/Kolkata")),
         utlis.roll_to_year(rollno),
@@ -114,6 +110,11 @@ def is_valid(request: HttpRequest, rollno: str):
         result.success = False
         result.msg = "Not valid passes found."
         return result
+    
+    if resPass.pass_type == "alumni" or resPass.pass_type == "one_time":
+        result.msg = f"Roll No. {rollno} has valid pass."
+        return result
+
 
     if not (
         timings["open"]

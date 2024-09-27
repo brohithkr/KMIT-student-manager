@@ -19,9 +19,13 @@ def rem_latecomers(request: HttpRequest):
     today = datetime.today()
     if type(body) != list:
         try:
+            todayCount = Latecomers.objects.filter(roll_no=body["roll_no"], date=body["date"]).count()
             lateCount = Latecomers.objects.filter(roll_no=body["roll_no"]).count()
-            Latecomers.objects.create(roll_no=body["roll_no"], date=body["date"])
-            result.msg = f"Scanned successfully.\nStudent has been late for {lateCount} times earlier."
+            if todayCount == 0:
+                Latecomers.objects.create(roll_no=body["roll_no"], date=body["date"])
+                result.msg = f"Scanned successfully.\nStudent has been late for {lateCount} times earlier."
+            else:
+                result.msg = f"Roll no has been scanned.\nStudent has been late for {lateCount} times earlier."
         except:
             result.success = False
             result.msg = "Not able to scan. Please try again."

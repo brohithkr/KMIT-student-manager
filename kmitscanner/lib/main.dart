@@ -72,6 +72,13 @@ class _HomePageState extends State<HomePage> {
               showGeneralDialog(
                 context: context,
                 pageBuilder: (context, a1, a2) {
+                  var rollNoPattern = RegExp(r'\d{2}BD[18]A\d{2}[A-HJ-NP-RT-Z0-9]{2}');
+                  var rnos = rollNoPattern.firstMatch(scanRes);
+                  if(rnos != null){
+                    print(scanRes + "hello");
+                    scanRes = rnos[0].toString();
+                    print(scanRes);
+                  }
                   var affirm = affirmFun(scanRes);
                   return FutureBuilder(
                     future: affirm,
@@ -174,45 +181,49 @@ class AffirmBox extends StatelessWidget {
       height: 3.5 * deviceSize.height / 8,
       width: 6 * deviceSize.width / 8,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.all(Radius.circular(8)),
+        borderRadius: const BorderRadius.all(Radius.circular(8)),
         color: Theme.of(context).colorScheme.surface,
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        mainAxisAlignment: MainAxisAlignment.start,
-        children: [
-          AffirmIcon(isValid: isValid),
-          Divider(
-            color: Theme.of(context).colorScheme.surfaceVariant,
-            indent: 33,
-            endIndent: 33,
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 30),
-            child: Text(
-              msg,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 20,
-                color: Theme.of(context).colorScheme.onSurface,
-                decoration: TextDecoration.none,
+      child: Stack(children: [
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            AffirmIcon(isValid: isValid),
+            Divider(
+              color: Theme.of(context).colorScheme.surfaceVariant,
+              indent: 33,
+              endIndent: 33,
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 30),
+              child: Text(
+                msg,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 20,
+                  color: Theme.of(context).colorScheme.onSurface,
+                  decoration: TextDecoration.none,
+                ),
               ),
             ),
-          ),
-          SizedBox(
-            height: 45,
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-            },
-            child: Text(
-              "Next",
-              style: TextStyle(fontSize: 20),
-            ),
-          )
-        ],
-      ),
+          ],
+        ),
+        Align(
+            alignment: Alignment.bottomCenter,
+            child: TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              child: const Padding(
+                padding: EdgeInsets.only(bottom: 8.0),
+                child: Text(
+                  "Next",
+                  style: TextStyle(fontSize: 20),
+                ),
+              ),
+            ))
+      ]),
     );
   }
 }
