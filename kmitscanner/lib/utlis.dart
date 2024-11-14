@@ -89,7 +89,7 @@ Future<Map<String, dynamic>> remLatecomers(String rollno) async {
         headers: Map.from({"authorization": "bearer $auth_token"}),
         body: jsonEncode(<String, String>{
           "roll_no": rollno,
-          "date": (DateTime.now().microsecondsSinceEpoch~/10e6).toString()
+          "date": (DateTime.now().microsecondsSinceEpoch).toString()
         }));
     // var x = (res.body);
     return jsonDecode(res.body);
