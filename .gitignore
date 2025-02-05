@@ -4,14 +4,10 @@ secret**
 db.sqlite3
 .idea
 .env
-students.json
 server/test.py
-server/.vscode/settings.json
 backData**
 server/testUpload.py
-server/students.json
 srvrcfg.py
-server/students_2023_2024.json
-server/students copy.json
 studentImages
 server/*.json
+student-data.ipynb

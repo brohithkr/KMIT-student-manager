@@ -1,4 +1,4 @@
-from os.path import dirname, abspath, isfile, join as joinpath
+from os.path import dirname, abspath, join as joinpath
 from sys import argv, exit, executable
 from re import fullmatch
 from requests import get as urlget, post as urlpost
