@@ -92,7 +92,7 @@ class GetLatecomersDialog(QDialog):
         baseurl = f"{SERVERURL}/latecomers"
         args = "ret_type=csv"
         if rno:
-            args += f"&roll_no={rno}"
+            args += f"&rollno={rno}"
             if not self.fullHistory.isChecked():
                 args += f"&frm={start}&to={end}"
         elif not self.fullHistory.isChecked():

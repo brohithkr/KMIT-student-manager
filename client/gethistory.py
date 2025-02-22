@@ -96,7 +96,7 @@ class GetHistoryDialog(QDialog):
 
         args = "ret_type=csv"
         if rno:
-            args += f"&based_on=rollno&roll_no={rno}"
+            args += f"&based_on=rollno&rollno={rno}"
             if not self.fullHistory.isChecked():
                 args += f"&frm={start}&to={end}"
         elif not self.fullHistory.isChecked():

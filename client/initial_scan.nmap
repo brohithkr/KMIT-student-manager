@@ -1,0 +1,42 @@
+# Nmap 7.95 scan initiated Sat Feb 22 13:41:46 2025 as: nmap -sV -sC -oA initial_scan 10.11.1.19
+Nmap scan report for 10.11.1.19
+Host is up (0.058s latency).
+Not shown: 994 closed tcp ports (reset)
+PORT     STATE SERVICE         VERSION
+22/tcp   open  ssh             OpenSSH 8.9p1 Ubuntu 3ubuntu0.11 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   256 e5:9f:d1:d2:80:08:a3:56:8a:bb:c9:e9:cf:ad:32:c6 (ECDSA)
+|_  256 db:01:04:f2:a3:5a:ae:21:8e:0f:79:3f:1b:0a:dc:09 (ED25519)
+80/tcp   open  http            Apache httpd
+|_http-server-header: Apache
+| http-title: tessellator: Log in to the site
+|_Requested resource was http://10.11.1.19/tessellator50/login/index.php
+81/tcp   open  http            Apache httpd
+|_http-server-header: Apache
+| http-title: tessellator: Log in to the site
+|_Requested resource was http://10.11.1.19:81/login/index.php
+| http-git: 
+|   10.11.1.19:81/.git/
+|     Git repository found!
+|     Repository description: Unnamed repository; edit this file 'description' to name the...
+|     Remotes:
+|       git://git.moodle.org/moodle.git
+|_    Project type: PHP application (guessed from .gitignore)
+88/tcp   open  http            Apache httpd (PHP 5.5.9-1ubuntu4.29)
+|_http-server-header: Apache
+|_http-title: Did not follow redirect to http://172.19.0.2/tessellator50
+99/tcp   open  http            Apache httpd 2.4.57 ((Debian))
+|_http-server-header: Apache/2.4.57 (Debian)
+| http-robots.txt: 1 disallowed entry 
+|_/
+|_http-title: phpMyAdmin
+7070/tcp open  ssl/realserver?
+| ssl-cert: Subject: commonName=AnyDesk Client
+| Not valid before: 2024-02-17T07:18:29
+|_Not valid after:  2074-02-04T07:18:29
+|_ssl-date: TLS randomness does not represent time
+MAC Address: A4:BF:01:93:67:31 (Intel Corporate)
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+
+Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
+# Nmap done at Sat Feb 22 13:42:20 2025 -- 1 IP address (1 host up) scanned in 33.58 seconds
