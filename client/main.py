@@ -85,7 +85,7 @@ class MainWin(QMainWindow):
         self.setupUI()
 
     def setupUI(self, rno: str = "") -> bool:
-        if not fullmatch("[0-9]{2}BD[158]A[0-9]{2}[A-HJ-NP-RT-Z0-9]{2}", rno):
+        if not fullmatch("[0-9]{2}BD[158]A(05|12|66|67)[A-HJ-NP-RT-Z0-9][A-HJ-NP-RT-Z1-9]", rno):
             self.PassType.setCurrentIndex(-1)
             self.PassType.setDisabled(True)
             self.GenPassBtn.setDisabled(True)
