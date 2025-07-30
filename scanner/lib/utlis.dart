@@ -1,14 +1,11 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
-// import 'package:flutter/services.dart';
 
 import './secrets.dart';
 
 import './db_handling.dart';
 // import 'ffi.dart';
-
-// var hosturl = "http://localhost:3000";
 
 int rollToYear(String rollno) {
   var today = DateTime.now();
@@ -35,7 +32,7 @@ dynamic getDecryptedData(String endata) {
 Future<Map<String, dynamic>> getValidity(rollno) async {
   try {
     var res = await http.get(Uri.parse("$hostUrl/isvalid?rollno=$rollno"),
-        headers: Map.from({"authorization": "bearer $auth_token"}));
+        headers: Map.from({"authorization": "bearer $authToken"}));
     return jsonDecode(res.body);
   } catch (e) {
     debugPrint(e.toString());
@@ -86,7 +83,7 @@ Future<bool> isValidPassOld(rollno) async {
 Future<Map<String, dynamic>> remLatecomers(String rollno) async {
   try {
     var res = await http.post(Uri.parse("$hostUrl/latecomers/"),
-        headers: Map.from({"authorization": "bearer $auth_token"}),
+        headers: Map.from({"authorization": "bearer $authToken"}),
         body: jsonEncode(<String, String>{
           "roll_no": rollno,
           "date": (DateTime.now().microsecondsSinceEpoch).toString()
@@ -126,22 +123,4 @@ Future<bool> refresh({bool startup = false}) async {
 // }
 
 void main() async {
-  // print(await getValidity("22BD1A0505"));
-  // String now = (DateTime.now().millisecondsSinceEpoch.toString());
-  // var res = await http.post(
-  //   Uri.parse("$hostUrl/latecomers"),
-  //   headers: Map<String, String>.from(
-  //     {
-  //       "authorization": "bearer $auth_token",
-  //     },
-  //   ),
-  //   body: jsonEncode(
-  //     [
-  //       {
-  //         "roll_no": "22BD1A0505",
-  //         "date": DateTime.now().millisecondsSinceEpoch.toString(),
-  //       }
-  //     ],
-  //   ),
-  // );
 }
