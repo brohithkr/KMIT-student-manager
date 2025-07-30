@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 // import 'package:flutter/services.dart';
 
-import 'secrets.dart';
+import './secrets.dart';
 
 import './db_handling.dart';
 // import 'ffi.dart';
