@@ -8,18 +8,18 @@ from datetime import date
 from base64 import b64decode as b64d, b64encode as b64e
 
 from PyQt5.QtWidgets import (
-    QApplication,
-    QMainWindow,
-    QMenu,
-    QAction,
-    QLineEdit,
-    QComboBox,
-    QToolButton,
-    QPushButton,
-    QGraphicsScene,
-    QGraphicsPixmapItem,
-    QGraphicsView,
-    QMessageBox,
+  QApplication,
+  QMainWindow,
+  QMenu,
+  QAction,
+  QLineEdit,
+  QComboBox,
+  QToolButton,
+  QPushButton,
+  QGraphicsScene,
+  QGraphicsPixmapItem,
+  QGraphicsView,
+  QMessageBox,
 )
 from PyQt5.QtGui import QIcon, QPixmap, QImage, QColorConstants
 from PyQt5.uic import loadUi
@@ -34,331 +34,304 @@ from srvrcfg import SERVERURL, headers, TIMEOUT
 
 BASE_DIR = None
 if getattr(sys, "frozen", False):
-    BASE_DIR = dirname(executable)
+  BASE_DIR = dirname(executable)
 elif __file__:
-    BASE_DIR = dirname(abspath(__file__))
+  BASE_DIR = dirname(abspath(__file__))
 
 DATA_DIR = joinpath(dirname(abspath(__file__)), "res")
 
 with open(joinpath(DATA_DIR, "Anonymous.png"), "rb") as img:
-    anonymous_img = b64e(img.read()), "Anonymous"
+  anonymous_img = b64e(img.read()), "Anonymous"
 
 DATE = date.today()
 YEAR = int(str(DATE.year)[2:])
 
 
 class MainWin(QMainWindow):
-    def __init__(self, parent=None):
-        super(MainWin, self).__init__(parent)
+  def __init__(self, parent=None):
+    super(MainWin, self).__init__(parent)
 
-        self.details: QLabel
-        self.rno: QLineEdit
-        self.invalidRno: QLabel
-        self.PassType: QComboBox
-        self.Tools: QToolButton
-        self.GenPassBtn: QPushButton
-        self.Image: QGraphicsView
+    self.details: QLabel
+    self.rno: QLineEdit
+    self.invalidRno: QLabel
+    self.PassType: QComboBox
+    self.Tools: QToolButton
+    self.GenPassBtn: QPushButton
+    self.Image: QGraphicsView
 
-        ui_file_path = joinpath(DATA_DIR, "design.ui")
-        loadUi(ui_file_path, self)
+    ui_file_path = joinpath(DATA_DIR, "design.ui")
+    loadUi(ui_file_path, self)
 
-        self.status = QLabel()
-        self.status.setAlignment(Qt.AlignmentFlag.AlignRight)
-        self.status.setStyleSheet("padding-right: 5px; padding-bottom: 3px")
-        self.status.setText("Waiting for data...")
+    self.status = QLabel()
+    self.status.setAlignment(Qt.AlignmentFlag.AlignRight)
+    self.status.setStyleSheet("padding-right: 5px; padding-bottom: 3px")
+    self.status.setText("Waiting for data...")
 
-        self.statusBar().addWidget(self.status, 1)
+    self.statusBar().addWidget(self.status, 1)
 
-        self.rno.textChanged.connect(self.handleRollNo)
-        self.reconnectRnoHandler()
-        self.PassType.model().item(3).setEnabled(
-            DATE.weekday() == 4
-        )  # Enable namaaz pass if friday
-        # self.rno.returnPressed.connect(lambda: self.PassType.setFocus())
+    self.rno.textChanged.connect(self.handleRollNo)
+    self.reconnectRnoHandler()
+    self.PassType.model().item(3).setEnabled(DATE.weekday() == 4)  # Enable namaaz pass if friday
+    # self.rno.returnPressed.connect(lambda: self.PassType.setFocus())
 
-        self.PassType.currentIndexChanged.connect(
-            lambda idx: self.GenPassBtn.setEnabled(idx > -1)
-        )
-        self.GenPassBtn.pressed.connect(self.generatePass)
+    self.PassType.currentIndexChanged.connect(lambda idx: self.GenPassBtn.setEnabled(idx > -1))
+    self.GenPassBtn.pressed.connect(self.generatePass)
 
-        self.setupOptions()
-        self.setupUI()
+    self.setupOptions()
+    self.setupUI()
 
-    def setupUI(self, rno: str = "") -> bool:
-        if not fullmatch("[0-9]{2}BD[158]A(05|12|66|67)[A-HJ-NP-RT-Z0-9][A-HJ-NP-RT-Z1-9]", rno):
-            self.PassType.setCurrentIndex(-1)
-            self.PassType.setDisabled(True)
-            self.GenPassBtn.setDisabled(True)
-            self._SetImg(*anonymous_img)
-            self.details.setText("## Enter data")
-            self.details.setStyleSheet("color: #ccc")
-            self.details.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            self.invalidRno.setText("Invalid Roll No." if len(rno) == 10 else "")
-            self.status.setText(
-                "Invalid Roll No." if len(rno) == 10 else "Waiting for data"
-            )
-            return False
-        self.status.setText("Processing")
-        return True
+  def setupUI(self, rno: str = "") -> bool:
+    if not fullmatch("[0-9]{2}BD[158]A(05|12|66|67)[A-HJ-NP-RT-Z0-9][A-HJ-NP-RT-Z1-9]", rno):
+      self.PassType.setCurrentIndex(-1)
+      self.PassType.setDisabled(True)
+      self.GenPassBtn.setDisabled(True)
+      self._SetImg(*anonymous_img)
+      self.details.setText("## Enter data")
+      self.details.setStyleSheet("color: #ccc")
+      self.details.setAlignment(Qt.AlignmentFlag.AlignCenter)
+      self.invalidRno.setText("Invalid Roll No." if len(rno) == 10 else "")
+      self.status.setText("Invalid Roll No." if len(rno) == 10 else "Waiting for data")
+      return False
+    self.status.setText("Processing")
+    return True
 
-    @pyqtSlot()
-    def reconnectRnoHandler(self) -> None:
-        self.handleRollNo_conn = self.rno.returnPressed.connect(
-            lambda: self.handleRollNo(self.rno.text())
-        )
-        self.rno.setReadOnly(False)
+  @pyqtSlot()
+  def reconnectRnoHandler(self) -> None:
+    self.handleRollNo_conn = self.rno.returnPressed.connect(
+      lambda: self.handleRollNo(self.rno.text())
+    )
+    self.rno.setReadOnly(False)
 
-    @pyqtSlot(str)
-    def handleRollNo(self, rno: str) -> None:
-        rno = rno.upper()
+  @pyqtSlot(str)
+  def handleRollNo(self, rno: str) -> None:
+    rno = rno.upper()
 
-        if not self.setupUI(rno):
-            return
+    if not self.setupUI(rno):
+      return
 
-        self.rno.setReadOnly(True)
-        self.rno.returnPressed.disconnect(self.handleRollNo_conn)
+    self.rno.setReadOnly(True)
+    self.rno.returnPressed.disconnect(self.handleRollNo_conn)
 
-        self.StateHandler = QThread()
-        self.detailsUpdater = DetailsFetcher(rno)
-        self.detailsUpdater.moveToThread(self.StateHandler)
-        self.StateHandler.started.connect(self.detailsUpdater.updateDetails)
-        self.StateHandler.started.connect(lambda: self.status.setText("Processing"))
+    self.StateHandler = QThread()
+    self.detailsUpdater = DetailsFetcher(rno)
+    self.detailsUpdater.moveToThread(self.StateHandler)
+    self.StateHandler.started.connect(self.detailsUpdater.updateDetails)
+    self.StateHandler.started.connect(lambda: self.status.setText("Processing"))
 
-        self.detailsUpdater.error.connect(
-            lambda err: (self.error(err), self.status.setText("Error"))
-        )
-        self.detailsUpdater.error.connect(self.StateHandler.quit)
-        self.detailsUpdater.success.connect(self.updateUI)
-        self.detailsUpdater.success.connect(lambda: self.status.setText("Ready"))
-        self.detailsUpdater.success.connect(self.StateHandler.quit)
+    self.detailsUpdater.error.connect(lambda err: (self.error(err), self.status.setText("Error")))
+    self.detailsUpdater.error.connect(self.StateHandler.quit)
+    self.detailsUpdater.success.connect(self.updateUI)
+    self.detailsUpdater.success.connect(lambda: self.status.setText("Ready"))
+    self.detailsUpdater.success.connect(self.StateHandler.quit)
 
-        self.StateHandler.finished.connect(self.detailsUpdater.deleteLater)
-        self.StateHandler.finished.connect(self.StateHandler.deleteLater)
-        self.StateHandler.finished.connect(self.reconnectRnoHandler)
-        self.StateHandler.finished.connect(lambda: self.PassType.setEnabled(True))
-        self.StateHandler.start()
+    self.StateHandler.finished.connect(self.detailsUpdater.deleteLater)
+    self.StateHandler.finished.connect(self.StateHandler.deleteLater)
+    self.StateHandler.finished.connect(self.reconnectRnoHandler)
+    self.StateHandler.finished.connect(lambda: self.PassType.setEnabled(True))
+    self.StateHandler.start()
 
-        # admn_yr = int(rno[:2])
-        # self.PassType.model().item(2).setEnabled(admn_yr < YEAR-3 or
-        #                                          (admn_yr == YEAR-3 and DATE.month > 6))
+    # admn_yr = int(rno[:2])
+    # self.PassType.model().item(2).setEnabled(admn_yr < YEAR-3 or
+    #                                          (admn_yr == YEAR-3 and DATE.month > 6))
 
-    @pyqtSlot(dict)
-    def updateUI(self, student_details) -> None:
-        self.PassType.model().item(2).setEnabled(int(student_details["year"]) == 4)
+  @pyqtSlot(dict)
+  def updateUI(self, student_details) -> None:
+    self.PassType.model().item(2).setEnabled(int(student_details["year"]) == 4)
 
-        self.details.setText(
-            f"##### Name:\n### {student_details['name']}\n---\n#### Section: {student_details['dept']}-{student_details['section']}\n#### Year: {student_details['year']}\n"
-        )
-        self.details.setStyleSheet("color: #000")
-        self.details.setAlignment(
-            Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter
-        )
+    self.details.setText(
+      f"##### Name:\n### {student_details['name']}\n---\n#### Section: {student_details['dept']}-{student_details['section']}\n#### Year: {student_details['year']}\n"
+    )
+    self.details.setStyleSheet("color: #000")
+    self.details.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
 
-        if student_details["picture"] in {None, ""}:
-            self._SetImg(*anonymous_img)
-            self._SetImg("Image not found", "Error", False)
-        else:
-            self._SetImg(student_details["picture"], "Student")
+    if student_details["picture"] in {None, ""}:
+      self._SetImg(*anonymous_img)
+      self._SetImg("Image not found", "Error", False)
+    else:
+      self._SetImg(student_details["picture"], "Student")
 
-    def setupOptions(self):
-        settingsMenu = QMenu(self)
-        settingsMenu.addAction("Set Lunch time", self.setLunchTime)
-        settingsMenu.addAction("Issue History", self.dlGenerationHistory)
-        settingsMenu.addAction("Scan History", self.dlScanningHistory)
-        settingsMenu.addAction("Latecomers data", self.getLatecomersData)
+  def setupOptions(self):
+    settingsMenu = QMenu(self)
+    settingsMenu.addAction("Set Lunch time", self.setLunchTime)
+    settingsMenu.addAction("Issue History", self.dlGenerationHistory)
+    settingsMenu.addAction("Scan History", self.dlScanningHistory)
+    settingsMenu.addAction("Latecomers data", self.getLatecomersData)
 
-        self.Tools.setMenu(settingsMenu)
-        self.Tools.setDefaultAction(QAction(self))
+    self.Tools.setMenu(settingsMenu)
+    self.Tools.setDefaultAction(QAction(self))
 
-        icon = QIcon()
-        icon.addPixmap(QPixmap(joinpath(DATA_DIR, "Gear.png")), QIcon.Normal, QIcon.On)
-        self.Tools.setIcon(icon)
-        self.Tools.setText(None)
+    icon = QIcon()
+    icon.addPixmap(QPixmap(joinpath(DATA_DIR, "Gear.png")), QIcon.Normal, QIcon.On)
+    self.Tools.setIcon(icon)
+    self.Tools.setText(None)
 
-    def setLunchTime(self):
-        self.status.setText("Modifying Lunch Time")
-        dlg = LunchTimeDialog(self)
+  def setLunchTime(self):
+    self.status.setText("Modifying Lunch Time")
+    dlg = LunchTimeDialog(self)
 
-        if dlg.error:
-            del dlg
-            return
+    if dlg.error:
+      del dlg
+      return
 
-        dlg.show()
-        self.status.setText("Waiting...")
+    dlg.show()
+    self.status.setText("Waiting...")
 
-    def dlGenerationHistory(self):
-        self.status.setText("Downloading Pass Issue History")
-        dlg = GetHistoryDialog(self, "Issue")
-        dlg.show()
-        self.status.setText("Waiting...")
+  def dlGenerationHistory(self):
+    self.status.setText("Downloading Pass Issue History")
+    dlg = GetHistoryDialog(self, "Issue")
+    dlg.show()
+    self.status.setText("Waiting...")
 
-    def dlScanningHistory(self):
-        self.status.setText("Downloading Pass Scan History")
-        dlg = GetHistoryDialog(self, "Scan")
-        dlg.show()
-        self.status.setText("Waiting...")
+  def dlScanningHistory(self):
+    self.status.setText("Downloading Pass Scan History")
+    dlg = GetHistoryDialog(self, "Scan")
+    dlg.show()
+    self.status.setText("Waiting...")
 
-    def getLatecomersData(self):
-        self.status.setText("Downloading Latecomers data")
-        dlg = GetLatecomersDialog(self)
-        dlg.show()
-        self.status.setText("Waiting...")
+  def getLatecomersData(self):
+    self.status.setText("Downloading Latecomers data")
+    dlg = GetLatecomersDialog(self)
+    dlg.show()
+    self.status.setText("Waiting...")
 
-    def _SetImg(
-        self,
-        img: bytes | str | None = None,
-        imgtype: str | None = None,
-        reset: bool = True,
-    ) -> None:
-        if reset:
-            self.Scene = QGraphicsScene()
-            self.ImgBox = QGraphicsPixmapItem()
-        if imgtype == None or imgtype == "Error":
-            text = self.Scene.addText("Enter Data" if img == None else img)
-            text.setDefaultTextColor(QColorConstants.Red)
-            if imgtype == "Error" and not reset:
-                text.setY(
-                    self.ImgBox.boundingRect().center().y()
-                    + 55
-                    - text.boundingRect().height() / 2
-                )
-                text.setX(
-                    self.ImgBox.boundingRect().center().x()
-                    - text.boundingRect().width() / 2
-                )
-        else:
-            self.Img = QImage.fromData(
-                b64d(img), "PNG" if imgtype == "QR" or imgtype == "Anonymous" else "JPG"
-            )
-            if imgtype == "Student":
-                self.PixMap = QPixmap.fromImage(self.Img).scaled(300, 370)
-            else:
-                self.PixMap = QPixmap.fromImage(self.Img).scaledToWidth(300)
-            self.ImgBox.setPixmap(self.PixMap)
-            self.Scene.addItem(self.ImgBox)
-        self.Image.setScene(self.Scene)
-        self.Image.setAlignment(Qt.AlignmentFlag.AlignCenter)
+  def _SetImg(
+    self,
+    img: bytes | str | None = None,
+    imgtype: str | None = None,
+    reset: bool = True,
+  ) -> None:
+    if reset:
+      self.Scene = QGraphicsScene()
+      self.ImgBox = QGraphicsPixmapItem()
+    if imgtype == None or imgtype == "Error":
+      text = self.Scene.addText("Enter Data" if img == None else img)
+      text.setDefaultTextColor(QColorConstants.Red)
+      if imgtype == "Error" and not reset:
+        text.setY(self.ImgBox.boundingRect().center().y() + 55 - text.boundingRect().height() / 2)
+        text.setX(self.ImgBox.boundingRect().center().x() - text.boundingRect().width() / 2)
+    else:
+      self.Img = QImage.fromData(
+        b64d(img), "PNG" if imgtype == "QR" or imgtype == "Anonymous" else "JPG"
+      )
+      if imgtype == "Student":
+        self.PixMap = QPixmap.fromImage(self.Img).scaled(300, 370)
+      else:
+        self.PixMap = QPixmap.fromImage(self.Img).scaledToWidth(300)
+      self.ImgBox.setPixmap(self.PixMap)
+      self.Scene.addItem(self.ImgBox)
+    self.Image.setScene(self.Scene)
+    self.Image.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
-    @pyqtSlot()
-    def generatePass(self):
-        self.status.setText("Processing...")
-        passtype = self.PassType.currentIndex()
-        try:
-            response = urlpost(
-                f"{SERVERURL}/gen_pass",
-                headers=headers,
-                json={
-                    "roll_no": self.rno.text().upper(),
-                    "pass_type": (
-                        "one_time"
-                        if passtype == 0
-                        else (
-                            "daily"
-                            if passtype == 1
-                            else "alumni" if passtype == 2 else "namaaz"
-                        )
-                    ),
-                },
-                timeout=TIMEOUT,
-            )
-        except (ConnectionError, Timeout):
-            self.error("Connection Error!\nCheck Connection & Try again.")
-            self.status.setText("Connection Error.")
-            return
+  @pyqtSlot()
+  def generatePass(self):
+    self.status.setText("Processing...")
+    passtype = self.PassType.currentIndex()
+    try:
+      response = urlpost(
+        f"{SERVERURL}/gen_pass",
+        headers=headers,
+        json={
+          "roll_no": self.rno.text().upper(),
+          "pass_type": (
+            "one_time"
+            if passtype == 0
+            else ("daily" if passtype == 1 else "alumni" if passtype == 2 else "namaaz")
+          ),
+        },
+        timeout=TIMEOUT,
+      )
+    except (ConnectionError, Timeout):
+      self.error("Connection Error!\nCheck Connection & Try again.")
+      self.status.setText("Connection Error.")
+      return
 
-        self.status.setText("Generating Pass")
+    self.status.setText("Generating Pass")
 
-        result = (
-            response.content.decode()
-            .replace("one_time", "Gate")
-            .replace("daily", "Lunch")
-            .replace("alumni", "Alumni")
-            .replace("namaaz", "Namaaz")
-        )
+    result = (
+      response.content.decode()
+      .replace("one_time", "Gate")
+      .replace("daily", "Lunch")
+      .replace("alumni", "Alumni")
+      .replace("namaaz", "Namaaz")
+    )
 
-        if result.startswith("Error:"):
-            self.error(result.split(":", 1)[1])
-            self.status.setText("Error")
-        elif result.startswith("Traceback"):
-            self.error(f"Server error. Returned:\n{result}")
-            self.status.setText("Server Error")
-        elif result.startswith("Warning:"):
-            self.warning(result.split(":", 1)[1])
-            self.status.setText("Done")
-        elif response.status_code == 200:
-            self.success("Pass Successfully created")
-            self.status.setText("Done")
-        else:
-            self.error(
-                f"Unexpected server-side error:\nResponse code: {response.status_code}\n{result}"
-            )
+    if result.startswith("Error:"):
+      self.error(result.split(":", 1)[1])
+      self.status.setText("Error")
+    elif result.startswith("Traceback"):
+      self.error(f"Server error. Returned:\n{result}")
+      self.status.setText("Server Error")
+    elif result.startswith("Warning:"):
+      self.warning(result.split(":", 1)[1])
+      self.status.setText("Done")
+    elif response.status_code == 200:
+      self.success("Pass Successfully created")
+      self.status.setText("Done")
+    else:
+      self.error(f"Unexpected server-side error:\nResponse code: {response.status_code}\n{result}")
 
-    @pyqtSlot(str)
-    def error(self, msg: str):
-        QMessageBox.critical(self, "Error!", msg.strip())
+  @pyqtSlot(str)
+  def error(self, msg: str):
+    QMessageBox.critical(self, "Error!", msg.strip())
 
-    @pyqtSlot(str)
-    def warning(self, msg: str):
-        QMessageBox.warning(self, "Warning", msg.strip())
+  @pyqtSlot(str)
+  def warning(self, msg: str):
+    QMessageBox.warning(self, "Warning", msg.strip())
 
-    @pyqtSlot(str)
-    def success(self, msg: str):
-        QMessageBox.information(self, "Success", msg.strip())
+  @pyqtSlot(str)
+  def success(self, msg: str):
+    QMessageBox.information(self, "Success", msg.strip())
 
 
 class DetailsFetcher(QObject):
-    error = pyqtSignal(str)
-    success = pyqtSignal(dict)
+  error = pyqtSignal(str)
+  success = pyqtSignal(dict)
 
-    def __init__(self, rno: str):
-        self.rno = rno
-        super().__init__(None)
+  def __init__(self, rno: str):
+    self.rno = rno
+    super().__init__(None)
 
-    def updateDetails(self):
-        try:
-            self.res = urlget(
-                f"{SERVERURL}/get_student_data?rollno={self.rno}",
-                headers=headers,
-                timeout=TIMEOUT,
-            )
-        except (ConnectionError, Timeout):
-            self.error.emit(
-                "Unable to connect to server. Check connection & Try again."
-            )
-            return
-        else:
-            if self.res.status_code == 200:
-                self.success.emit(self.res.json())
-                return
-            else:
-                self.error.emit(
-                    "Roll number not found."
-                    if self.res.status_code == 404
-                    else "Unable to fetch Student details"
-                )
-                return
+  def updateDetails(self):
+    try:
+      self.res = urlget(
+        f"{SERVERURL}/get_student_data?rollno={self.rno}",
+        headers=headers,
+        timeout=TIMEOUT,
+      )
+    except (ConnectionError, Timeout):
+      self.error.emit("Unable to connect to server. Check connection & Try again.")
+      return
+    else:
+      if self.res.status_code == 200:
+        self.success.emit(self.res.json())
+        return
+      else:
+        self.error.emit(
+          "Roll number not found."
+          if self.res.status_code == 404
+          else "Unable to fetch Student details"
+        )
+        return
 
 
 if __name__ == "__main__":
-    from platform import system
+  from platform import system
 
-    ostype = system()
-    iconext = "png"
+  ostype = system()
+  iconext = "png"
 
-    if ostype == "Windows":
-        # Windows Taskbar icon fix
-        import ctypes
+  if ostype == "Windows":
+    # Windows Taskbar icon fix
+    import ctypes
 
-        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
-            "KMIT.Pass.Generator.1"
-        )
-        iconext = "ico"
-    elif ostype == "Darwin":
-        iconext = "icns"
+    ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("KMIT.Garuda.Generator.1")
+    iconext = "ico"
+  elif ostype == "Darwin":
+    iconext = "icns"
 
-    app = QApplication(argv)
-    app.setAttribute(Qt.ApplicationAttribute.AA_DisableWindowContextHelpButton)
-    win = MainWin()
-    win.setWindowIcon(QIcon(f"{DATA_DIR}/kmit.{iconext}"))
-    win.show()
-    exit(app.exec())
+  app = QApplication(argv)
+  app.setAttribute(Qt.ApplicationAttribute.AA_DisableWindowContextHelpButton)
+  win = MainWin()
+  win.setWindowIcon(QIcon(f"{DATA_DIR}/kmit.{iconext}"))
+  win.show()
+  exit(app.exec())
