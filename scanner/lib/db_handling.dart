@@ -93,7 +93,7 @@ class ValidPass {
       var db = await openDB();
       await db.insert(tablename, toMap());
       // var res = await db.query("Lunch_Timings");
-      // print(res);
+      // debugPrint(res);
       return true;
     } catch (e) {
       return false;
@@ -118,7 +118,6 @@ class ValidPass {
               "pass_type": i["pass_type"]
             }));
       }
-      // print()
       return true;
     } catch (e) {
       return false;
@@ -128,8 +127,8 @@ class ValidPass {
   static Future<List<dynamic>> getAll() async {
     var db = await openDB();
     var res = await db.rawQuery('SELECT * from $tablename');
-    // print(res);
-    // print("get all ran");
+    // debugPrint(res);
+    // debugPrint("get all ran");
     return res;
   }
 }

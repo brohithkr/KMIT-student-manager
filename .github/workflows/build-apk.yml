@@ -26,7 +26,7 @@ jobs:
         run: |
           echo 'var hostUrl = "${{secrets.SERVERURL}}";
           var authToken =
-              "${{secrets.ACCESS_TOKEN}}"
+              "${{secrets.ACCESS_TOKEN}}";
           ' > scanner/lib/secrets.dart
 
       - name: Build Application
