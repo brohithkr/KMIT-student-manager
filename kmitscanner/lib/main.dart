@@ -72,7 +72,7 @@ class _HomePageState extends State<HomePage> {
               showGeneralDialog(
                 context: context,
                 pageBuilder: (context, a1, a2) {
-                  var rollNoPattern = RegExp(r'\d{2}BD[18]A\d{2}[A-HJ-NP-RT-Z0-9]{2}');
+                  var rollNoPattern = RegExp(r'[0-9]{2}BD[158]A(05|12|66|67)[A-HJ-NP-RT-Z0-9][A-HJ-NP-RT-Z1-9]');
                   var rnos = rollNoPattern.firstMatch(scanRes);
                   if(rnos != null){
                     print(scanRes + "hello");
