@@ -56,7 +56,6 @@ Future<bool> isValidPassOld(rollno) async {
   int year = rollToYear(pass['rollno'] as String);
   if (pass['pass_type'] == 'alumni' || pass['pass_type'] == 'single_use') {
     // ignore: avoid_print
-    print("Is True");
     return true;
   }
   var timing = await getTimings()[year - 1];
@@ -107,7 +106,7 @@ Future<bool> refresh({bool startup = false}) async {
   // try {
   //   await refreshTimings();
   //   await ValidPass.loadAll();
-  //   print(await getValidity("22BD1A0505"));
+  //   debugPrint(await getValidity("22BD1A0505"));
   //   return true;
   // } catch (e) {
   //   return false;

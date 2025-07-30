@@ -75,9 +75,8 @@ class _HomePageState extends State<HomePage> {
                   var rollNoPattern = RegExp(r'[0-9]{2}BD[158]A(05|12|66|67)[A-HJ-NP-RT-Z0-9][A-HJ-NP-RT-Z1-9]');
                   var rnos = rollNoPattern.firstMatch(scanRes);
                   if(rnos != null){
-                    print(scanRes + "hello");
                     scanRes = rnos[0].toString();
-                    print(scanRes);
+                    debugPrint(scanRes);
                   }
                   var affirm = affirmFun(scanRes);
                   return FutureBuilder(
