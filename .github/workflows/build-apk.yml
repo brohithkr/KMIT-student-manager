@@ -1,0 +1,41 @@
+name: Build EXE
+on: 
+  push:
+    paths: 
+      - scanner/*
+      - .github/workflows/build-apk.yml
+  workflow_dispatch: 
+    
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: flutter-actions/setup-flutter@v4
+        with:
+          channel: stable
+
+      - name: Install requirements 
+        run: |
+          cd scanner
+          flutter pub get
+
+      - name: Create secrets.dart
+        run: |
+          echo 'var hostUrl = "${{secrets.SERVERURL}}";
+          var authToken =
+              "${{secrets.ACCESS_TOKEN}}"
+          ' > scanner/lib/secrets.dart
+
+      - name: Package Application
+        run: |
+          cd scanner
+          flutter build apk --release
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with: 
+          name: scanner
+          path: scanner/build/app/outputs/flutter-apk/app-release.apk
