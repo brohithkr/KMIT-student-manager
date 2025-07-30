@@ -1,4 +1,4 @@
-name: Build EXE
+name: Build Scanner APK
 on: 
   push:
     paths: 
