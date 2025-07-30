@@ -2,7 +2,7 @@ name: Build Scanner APK
 on: 
   push:
     paths: 
-      - scanner/*
+      - scanner/**
       - .github/workflows/build-apk.yml
   workflow_dispatch: 
     

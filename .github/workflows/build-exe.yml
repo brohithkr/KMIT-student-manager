@@ -2,7 +2,7 @@ name: Build Generator EXE
 on: 
   push:
     paths: 
-      - client/*
+      - client/**
       - .github/workflows/build-exe.yml
   workflow_dispatch: 
     
